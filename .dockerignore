@@ -1,0 +1,71 @@
+# Dependencies
+node_modules
+npm-debug.log*
+
+# Build outputs
+.next
+out
+build
+
+# Environment and config files
+.env*
+!.env.example
+
+# Version control
+.git
+.gitignore
+
+# IDE and editor files
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs
+
+# Testing
+coverage
+.nyc_output
+.jest
+
+# Cache
+.cache
+.parcel-cache
+
+# Temporary files
+*.tmp
+*.temp
+
+# Documentation
+README.md
+*.md
+
+# Docker files (don't copy into container)
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Images - will be mounted as volumes
+public/images/
+images/
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.bmp
+*.webp
+*.svg
+*.ico
+uploads/
+assets/images/ 
