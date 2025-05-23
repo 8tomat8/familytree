@@ -4,7 +4,7 @@ interface ApiRequestOptions extends RequestInit {
     timeout?: number;
 }
 
-interface ApiResponse<T = any> {
+interface ApiResponse<T = unknown> {
     data?: T;
     error?: string;
     status: number;
@@ -60,7 +60,7 @@ class ApiClient {
         }
     }
 
-    async get<T = any>(url: string, options: ApiRequestOptions = {}): Promise<ApiResponse<T>> {
+    async get<T = unknown>(url: string, options: ApiRequestOptions = {}): Promise<ApiResponse<T>> {
         try {
             const response = await this.fetchWithLogging(url, {
                 ...options,
@@ -91,9 +91,9 @@ class ApiClient {
         }
     }
 
-    async post<T = any>(
+    async post<T = unknown>(
         url: string,
-        body?: any,
+        body?: unknown,
         options: ApiRequestOptions = {}
     ): Promise<ApiResponse<T>> {
         try {
@@ -131,9 +131,9 @@ class ApiClient {
         }
     }
 
-    async put<T = any>(
+    async put<T = unknown>(
         url: string,
-        body?: any,
+        body?: unknown,
         options: ApiRequestOptions = {}
     ): Promise<ApiResponse<T>> {
         try {
@@ -171,7 +171,7 @@ class ApiClient {
         }
     }
 
-    async delete<T = any>(url: string, options: ApiRequestOptions = {}): Promise<ApiResponse<T>> {
+    async delete<T = unknown>(url: string, options: ApiRequestOptions = {}): Promise<ApiResponse<T>> {
         try {
             const response = await this.fetchWithLogging(url, {
                 ...options,
