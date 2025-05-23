@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: false,
   },
+  logging: {
+    incomingRequests: true,
+  },
 
   // Rewrite static image requests to serve from public/images
   async rewrites() {
