@@ -5,7 +5,7 @@ import { imageService } from '@/lib';
 
 export async function POST(
     request: NextRequest,
-    { params }: { params: { filename: string } }
+    { params }: { params: Promise<{ filename: string }> }
 ) {
     try {
         const { filename } = await params;
