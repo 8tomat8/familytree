@@ -62,7 +62,7 @@ function GridItem({ image, index, currentIndex, onImageSelect }: GridItemProps) 
                     ) : (
                         <>
                             <Image
-                                src={`/api/images/${encodeURIComponent(image)}`}
+                                src={`/images/${encodeURIComponent(image)}`}
                                 alt={image}
                                 fill
                                 style={{
