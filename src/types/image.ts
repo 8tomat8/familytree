@@ -1,5 +1,6 @@
 // Supported image file extensions (all support rotation)
 export const SUPPORTED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'] as const;
+export type SupportedImageExtension = typeof SUPPORTED_IMAGE_EXTENSIONS[number];
 
 // Valid rotation degrees
 export const VALID_DEGREES = [90, 180, 270] as const;

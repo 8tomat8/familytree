@@ -1,6 +1,6 @@
 import { promises as fs } from 'fs';
 import path from 'path';
-import { SUPPORTED_IMAGE_EXTENSIONS } from '@/types/image';
+import { SupportedImageExtension, SUPPORTED_IMAGE_EXTENSIONS } from '@/types/image';
 
 export class ImageService {
     private readonly imagesDir: string;
@@ -53,7 +53,7 @@ export class ImageService {
      */
     isValidImageFormat(filename: string): boolean {
         const ext = path.extname(filename).toLowerCase();
-        return SUPPORTED_IMAGE_EXTENSIONS.includes(ext as any);
+        return SUPPORTED_IMAGE_EXTENSIONS.includes(ext as SupportedImageExtension);
     }
 
     /**

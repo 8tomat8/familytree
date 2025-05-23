@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
 import { Box, IconButton, Tooltip } from '@mui/material';
 import { RotateLeft, RotateRight } from '@mui/icons-material';
@@ -48,8 +48,9 @@ export function ImageDisplay({ src, onImageRotated }: ImageDisplayProps) {
         }
     };
 
-    // Debounce rotation with 300ms delay
-    const debouncedRotate = useDebounce(handleRotation, 200);
+    // Create debounced rotation function - call useDebounce at component level
+    const debouncedRotateLeft = useDebounce(() => handleRotation(270), 200);
+    const debouncedRotateRight = useDebounce(() => handleRotation(90), 200);
 
     return (
         <div className="relative w-full h-full">
@@ -69,7 +70,7 @@ export function ImageDisplay({ src, onImageRotated }: ImageDisplayProps) {
             >
                 <Tooltip title="Rotate Left (90°)">
                     <IconButton
-                        onClick={() => debouncedRotate(270)}
+                        onClick={debouncedRotateLeft}
                         disabled={isRotating}
                         sx={{
                             color: 'white',
@@ -85,7 +86,7 @@ export function ImageDisplay({ src, onImageRotated }: ImageDisplayProps) {
 
                 <Tooltip title="Rotate Right (90°)">
                     <IconButton
-                        onClick={() => debouncedRotate(90)}
+                        onClick={debouncedRotateRight}
                         disabled={isRotating}
                         sx={{
                             color: 'white',
