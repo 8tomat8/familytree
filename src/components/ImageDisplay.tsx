@@ -1,19 +1,108 @@
 'use client';
 
+import { useState, useRef } from 'react';
 import Image from 'next/image';
+import { Box, IconButton, Tooltip } from '@mui/material';
+import { RotateLeft, RotateRight } from '@mui/icons-material';
+import { useDebounce } from '../hooks/useDebounce';
+import { ValidDegrees } from '../types/image';
 
 interface ImageDisplayProps {
     src: string;
+    onImageRotated?: (filename: string) => void;
 }
 
-export function ImageDisplay({ src }: ImageDisplayProps) {
+export function ImageDisplay({ src, onImageRotated }: ImageDisplayProps) {
+    const [isRotating, setIsRotating] = useState(false);
+    const [refreshKey, setRefreshKey] = useState(0);
+
     // Serve images directly from public/images folder
     const imageSrc = `/images/${encodeURIComponent(src)}`;
 
+    const handleRotation = async (degrees: ValidDegrees) => {
+        if (isRotating) return;
+
+        setIsRotating(true);
+        try {
+            const response = await fetch(`/api/images/${encodeURIComponent(src)}/rotate`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ degrees }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to rotate image');
+            }
+
+            // Force image reload by updating refresh key
+            setRefreshKey(prev => prev + 1);
+
+            // Notify parent component about rotation
+            onImageRotated?.(src);
+        } catch (error) {
+            console.error('Error rotating image:', error);
+        } finally {
+            setIsRotating(false);
+        }
+    };
+
+    // Debounce rotation with 300ms delay
+    const debouncedRotate = useDebounce(handleRotation, 200);
+
     return (
         <div className="relative w-full h-full">
+            {/* Rotation controls overlay */}
+            <Box
+                position="absolute"
+                top={16}
+                right={16}
+                zIndex={10}
+                display="flex"
+                gap={1}
+                sx={{
+                    bgcolor: 'rgba(0,0,0,0.7)',
+                    borderRadius: 2,
+                    p: 0.5,
+                }}
+            >
+                <Tooltip title="Rotate Left (90°)">
+                    <IconButton
+                        onClick={() => debouncedRotate(270)}
+                        disabled={isRotating}
+                        sx={{
+                            color: 'white',
+                            '&:hover': {
+                                bgcolor: 'rgba(255,255,255,0.1)'
+                            }
+                        }}
+                        size="small"
+                    >
+                        <RotateLeft />
+                    </IconButton>
+                </Tooltip>
+
+                <Tooltip title="Rotate Right (90°)">
+                    <IconButton
+                        onClick={() => debouncedRotate(90)}
+                        disabled={isRotating}
+                        sx={{
+                            color: 'white',
+                            '&:hover': {
+                                bgcolor: 'rgba(255,255,255,0.1)'
+                            }
+                        }}
+                        size="small"
+                    >
+                        <RotateRight />
+                    </IconButton>
+                </Tooltip>
+            </Box>
+
             <Image
-                src={imageSrc}
+                key={refreshKey}
+                src={`${imageSrc}?v=${refreshKey}`}
                 alt={src}
                 fill
                 className="object-contain"

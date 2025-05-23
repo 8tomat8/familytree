@@ -14,6 +14,15 @@ export function Gallery() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showGridOverlay, setShowGridOverlay] = useState(false);
+    const [imageRefreshKeys, setImageRefreshKeys] = useState<Record<string, number>>({});
+
+    // Handle image rotation refresh
+    const handleImageRotated = (filename: string) => {
+        setImageRefreshKeys(prev => ({
+            ...prev,
+            [filename]: (prev[filename] || 0) + 1
+        }));
+    };
 
     useEffect(() => {
         const fetchImages = async () => {
@@ -98,6 +107,7 @@ export function Gallery() {
                 images={images}
                 currentIndex={index}
                 onImageSelect={handleImageSelect}
+                imageRefreshKeys={imageRefreshKeys}
             />
 
             <Box flex={1} position="relative">
@@ -131,7 +141,10 @@ export function Gallery() {
                 </Box>
 
                 {/* Full-size image display */}
-                <ImageDisplay src={images[index]} />
+                <ImageDisplay
+                    src={images[index]}
+                    onImageRotated={handleImageRotated}
+                />
 
                 {/* Image counter overlay */}
                 <Box
@@ -192,6 +205,7 @@ export function Gallery() {
                             images={images}
                             currentIndex={index}
                             onImageSelect={handleImageSelect}
+                            imageRefreshKeys={imageRefreshKeys}
                         />
                     </Box>
                 </Paper>

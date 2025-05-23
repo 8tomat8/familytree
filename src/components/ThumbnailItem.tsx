@@ -12,11 +12,12 @@ interface ThumbnailItemProps {
         images: string[];
         currentIndex: number;
         onImageSelect: (index: number) => void;
+        imageRefreshKeys?: Record<string, number>;
     };
 }
 
 export function ThumbnailItem({ index, style, data }: ThumbnailItemProps) {
-    const { images, currentIndex, onImageSelect } = data;
+    const { images, currentIndex, onImageSelect, imageRefreshKeys = {} } = data;
     const image = images[index];
     const [isLoaded, setIsLoaded] = useState(false);
 
@@ -30,6 +31,8 @@ export function ThumbnailItem({ index, style, data }: ThumbnailItemProps) {
     if (!image) return null;
 
     const isSelected = index === currentIndex;
+    const refreshKey = imageRefreshKeys[image] || 0;
+    const imageSrc = `/images/${encodeURIComponent(image)}${refreshKey > 0 ? `?v=${refreshKey}` : ''}`;
 
     return (
         <Box style={style} sx={{ p: 0.5 }}>
@@ -67,7 +70,8 @@ export function ThumbnailItem({ index, style, data }: ThumbnailItemProps) {
                             <>
                                 {/* Image loads only when in view */}
                                 <Image
-                                    src={`/images/${encodeURIComponent(image)}`}
+                                    key={refreshKey}
+                                    src={imageSrc}
                                     alt={image}
                                     width={112}
                                     height={112}

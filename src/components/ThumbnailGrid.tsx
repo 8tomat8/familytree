@@ -9,6 +9,7 @@ interface ThumbnailGridProps {
     images: string[];
     currentIndex: number;
     onImageSelect: (index: number) => void;
+    imageRefreshKeys?: Record<string, number>;
 }
 
 interface GridItemProps {
@@ -16,9 +17,10 @@ interface GridItemProps {
     index: number;
     currentIndex: number;
     onImageSelect: (index: number) => void;
+    imageRefreshKeys?: Record<string, number>;
 }
 
-function GridItem({ image, index, currentIndex, onImageSelect }: GridItemProps) {
+function GridItem({ image, index, currentIndex, onImageSelect, imageRefreshKeys = {} }: GridItemProps) {
     const [isLoaded, setIsLoaded] = useState(false);
 
     // Use intersection observer with buffer zone to load images ahead of time
@@ -29,6 +31,8 @@ function GridItem({ image, index, currentIndex, onImageSelect }: GridItemProps) 
     });
 
     const isSelected = index === currentIndex;
+    const refreshKey = imageRefreshKeys[image] || 0;
+    const imageSrc = `/images/${encodeURIComponent(image)}${refreshKey > 0 ? `?v=${refreshKey}` : ''}`;
 
     return (
         <Card
@@ -62,7 +66,8 @@ function GridItem({ image, index, currentIndex, onImageSelect }: GridItemProps) 
                     ) : (
                         <>
                             <Image
-                                src={`/images/${encodeURIComponent(image)}`}
+                                key={refreshKey}
+                                src={imageSrc}
                                 alt={image}
                                 fill
                                 style={{
@@ -100,7 +105,8 @@ function GridItem({ image, index, currentIndex, onImageSelect }: GridItemProps) 
 export function ThumbnailGrid({
     images,
     currentIndex,
-    onImageSelect
+    onImageSelect,
+    imageRefreshKeys = {}
 }: ThumbnailGridProps) {
     const [columns, setColumns] = useState(4); // Default columns
 
@@ -157,6 +163,7 @@ export function ThumbnailGrid({
                             index={index}
                             currentIndex={currentIndex}
                             onImageSelect={onImageSelect}
+                            imageRefreshKeys={imageRefreshKeys}
                         />
                     </Box>
                 ))}
