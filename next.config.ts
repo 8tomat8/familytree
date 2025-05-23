@@ -7,6 +7,16 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: false,
   },
+
+  // Rewrite static image requests to serve from public/images
+  async rewrites() {
+    return [
+      {
+        source: '/static/img/:path*',
+        destination: '/images/:path*',
+      },
+    ];
+  },
 };
 
 export default nextConfig;
