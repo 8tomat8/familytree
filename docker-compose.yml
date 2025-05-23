@@ -1,24 +1,42 @@
-version: '3.8'
-
 services:
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
     environment:
       - NODE_ENV=production
       - PORT=3000
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.familytree.tls=true
+      - traefik.http.routers.familytree.tls.certresolver=le
+      - traefik.http.routers.familytree.tls.domains[0].main=${DOMAIN}
+      - traefik.http.routers.familytree.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.familytree.service=familytree
+      - traefik.http.services.familytree.loadbalancer.server.port=3000
     volumes:
       # Mount images directory as volume (update path as needed)
-      - ./images:/app/public/images
+      - images:/app/public/images
       # Uncomment below for writable uploads directory
       # - ./uploads:/app/uploads
     restart: unless-stopped
+    networks:
+      - mynetwork
     healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health" ]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/api/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+
+networks:
+  mynetwork:
+    external: true
+
+volumes:
+  images:
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: ./images
