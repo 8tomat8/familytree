@@ -22,9 +22,14 @@ export function ImageDisplay({ src, onImageRotated }: ImageDisplayProps) {
     const handleRotation = async (degrees: ValidDegrees) => {
         if (isRotating) return;
 
+        console.log(`[ImageDisplay] Starting rotation request: ${src} by ${degrees} degrees`);
         setIsRotating(true);
+
         try {
-            const response = await fetch(`/api/images/${encodeURIComponent(src)}/rotate`, {
+            const url = `/api/images/${encodeURIComponent(src)}/rotate`;
+            console.log(`[ImageDisplay] Making POST request to: ${url}`);
+
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -32,9 +37,15 @@ export function ImageDisplay({ src, onImageRotated }: ImageDisplayProps) {
                 body: JSON.stringify({ degrees }),
             });
 
+            console.log(`[ImageDisplay] Response status: ${response.status} ${response.statusText}`);
+
             if (!response.ok) {
-                throw new Error('Failed to rotate image');
+                const errorText = await response.text();
+                console.error(`[ImageDisplay] Server error: ${response.status} - ${errorText}`);
+                throw new Error(`Failed to rotate image: ${response.status} ${response.statusText}`);
             }
+
+            console.log(`[ImageDisplay] Successfully rotated ${src} by ${degrees} degrees`);
 
             // Force image reload by updating refresh key
             setRefreshKey(prev => prev + 1);
@@ -42,9 +53,14 @@ export function ImageDisplay({ src, onImageRotated }: ImageDisplayProps) {
             // Notify parent component about rotation
             onImageRotated?.(src);
         } catch (error) {
-            console.error('Error rotating image:', error);
+            console.error(`[ImageDisplay] Error rotating image ${src}:`, error);
+            if (error instanceof Error) {
+                console.error(`[ImageDisplay] Error message: ${error.message}`);
+                console.error(`[ImageDisplay] Error stack:`, error.stack);
+            }
         } finally {
             setIsRotating(false);
+            console.log(`[ImageDisplay] Rotation request completed for: ${src}`);
         }
     };
 
