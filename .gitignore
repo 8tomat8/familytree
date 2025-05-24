@@ -43,3 +43,5 @@ next-env.d.ts
 # Personal family photos
 /public/images
 /images/
+/postgres_data/
+/drizzle/
