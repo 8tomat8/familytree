@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { imageService, logger } from '@/lib';
+import { dbImageService, logger } from '@/lib';
 
 export async function GET(request: NextRequest) {
     try {
@@ -7,31 +7,28 @@ export async function GET(request: NextRequest) {
             userAgent: request.headers.get('user-agent') || 'unknown'
         });
 
-        const images = await imageService.listImages();
+        // Get images from database
+        const images = await dbImageService.listImages();
 
         const response = NextResponse.json({
-            images,
-            count: images.length
-        });
-
-        logger.logApiResponse('GET', '/api/images', 200, {
-            userAgent: request.headers.get('user-agent') || 'unknown'
+            images: images.map(img => ({
+                filename: img.filename,
+                size: img.size,
+                width: img.width,
+                height: img.height,
+                mimeType: img.mimeType,
+                tags: img.tags || [],
+                description: img.description,
+                createdAt: img.createdAt,
+                updatedAt: img.updatedAt
+            })),
+            count: images.length,
         });
 
         return response;
     } catch (error) {
-        logger.logServerError(
-            'Failed to read images directory',
-            error as Error,
-            {
-                method: 'GET',
-                url: '/api/images',
-                userAgent: request.headers.get('user-agent') || 'unknown'
-            }
-        );
-
         return NextResponse.json(
-            { error: 'Failed to read images directory' },
+            { error: 'Failed to read images from database' },
             { status: 500 }
         );
     }

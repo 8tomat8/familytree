@@ -1,4 +1,16 @@
 services:
+  postgres:
+    image: postgres:17
+    env_file:
+      - .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    networks:
+      - familytree
+
   nginx:
     image: nginx:alpine
     labels:
@@ -17,6 +29,7 @@ services:
     restart: unless-stopped
     networks:
       - mynetwork
+      - familytree
     healthcheck:
       test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:80/api/health" ]
       interval: 30s
@@ -28,9 +41,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    environment:
-      - NODE_ENV=production
-      - PORT=3000
+    env_file:
+      - .env
     volumes:
       # Mount images directory as volume (update path as needed)
       - images:/app/public/images
@@ -38,12 +50,16 @@ services:
       # - ./uploads:/app/uploads
     restart: unless-stopped
     networks:
-      - mynetwork
+      - familytree
+    depends_on:
+      postgres:
+        condition: service_healthy
     # Remove external exposure since nginx will handle it
     expose:
       - "3000"
 
 networks:
+  familytree:
   mynetwork:
     external: true
 
@@ -54,3 +70,9 @@ volumes:
       o: bind
       type: none
       device: ./images
+  postgres_data:
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: ./postgres_data

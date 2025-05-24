@@ -7,10 +7,11 @@ import { useSwipeable } from 'react-swipeable';
 import { ThumbnailCarousel } from './ThumbnailCarousel';
 import { ThumbnailGrid } from './ThumbnailGrid';
 import { ImageDisplay } from './ImageDisplay';
-import { ImageListResponse } from '../types';
+import { ImageListResponse, ImageMetadata } from '../types';
+import { ImageMetadataPanel } from './ImageMetadataPanel';
 
 export function Gallery() {
-    const [images, setImages] = useState<string[]>([]);
+    const [images, setImages] = useState<ImageMetadata[]>([]);
     const [index, setIndex] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -111,7 +112,7 @@ export function Gallery() {
 
     if (images.length === 0) {
         return (
-            <div className="flex justify-center items-center h-screen">
+            <div className="flex justify-center items-center h-screen flex-col space-y-4">
                 <p className="text-gray-500">
                     No images found in <code className="bg-gray-100 px-2 py-1 rounded dark:bg-gray-800">public/images</code>
                 </p>
@@ -127,6 +128,8 @@ export function Gallery() {
         }
     }
 
+    const currentImage = images[index];
+
     return (
         <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
             <div className="hidden md:block">
@@ -138,33 +141,79 @@ export function Gallery() {
                 />
             </div>
 
-            <div className="flex-1 relative" {...swipeHandlers}>
-                {/* Navigation controls overlay */}
-                <div className="absolute top-2 left-1/2 transform -translate-x-1/2 z-10 flex items-center gap-2">
-                    <button
-                        onClick={() => setShowGridOverlay(true)}
-                        className="flex items-center gap-2 px-3 py-1.5 text-sm bg-blue-500 hover:bg-blue-600 text-white rounded font-medium transition-colors"
-                    >
-                        <FontAwesomeIcon icon={faTh} className="w-4 h-4" />
-                        Grid View
-                    </button>
-                </div>
+            {/* Main image area */}
+            <div className="flex-1 flex flex-col" {...swipeHandlers}>
+                {/* Header with navigation and grid toggle */}
+                <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-20">
+                    <div className="flex items-center space-x-4">
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {index + 1} of {images.length}
+                        </p>
+                        {currentImage && (
+                            <div className="flex items-center space-x-4 text-xs text-gray-500">
+                                <span>{currentImage.filename}</span>
+                                {currentImage.size && (
+                                    <span>{Math.round(currentImage.size / 1024)} KB</span>
+                                )}
+                                {currentImage.width && currentImage.height && (
+                                    <span>{currentImage.width} × {currentImage.height}</span>
+                                )}
+                                {currentImage.tags.length > 0 && (
+                                    <div className="flex gap-1">
+                                        {currentImage.tags.map(tag => (
+                                            <span
+                                                key={tag}
+                                                className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs"
+                                            >
+                                                {tag}
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
 
-                {/* Full-size image display */}
-                <ImageDisplay
-                    src={images[index]}
-                    onImageRotated={handleImageRotated}
-                />
-
-                {/* Image counter overlay */}
-                <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 z-10">
-                    <div className="bg-black bg-opacity-50 text-white px-4 py-2 rounded text-sm">
-                        {index + 1} / {images.length}
+                    <div className="flex items-center space-x-2">
+                        <button
+                            onClick={() => setShowGridOverlay(true)}
+                            className="md:hidden p-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+                            title="Show grid view"
+                        >
+                            <FontAwesomeIcon icon={faTh} className="w-5 h-5" />
+                        </button>
                     </div>
                 </div>
+
+                {/* Image display */}
+                <div className="flex-1 relative">
+                    {currentImage && (
+                        <ImageDisplay
+                            src={currentImage.filename}
+                            onImageRotated={handleImageRotated}
+                        />
+                    )}
+                </div>
+
+                {/* Description area */}
+                {currentImage?.description && (
+                    <div className="p-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+                        <p className="text-sm text-gray-700 dark:text-gray-300">
+                            {currentImage.description}
+                        </p>
+                    </div>
+                )}
+
+                {/* Image Metadata Panel */}
+                {currentImage && (
+                    <ImageMetadataPanel
+                        image={currentImage}
+                        onUpdate={() => { }}
+                    />
+                )}
             </div>
 
-            {/* Grid Overlay Modal */}
+            {/* Grid overlay for mobile */}
             {showGridOverlay && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
                     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-[90vw] max-h-[90vh] w-full relative overflow-hidden">

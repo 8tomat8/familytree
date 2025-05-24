@@ -3,12 +3,13 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { useInView } from 'react-intersection-observer';
+import { ImageMetadata } from '../types';
 
 interface ThumbnailItemProps {
     index: number;
     style: React.CSSProperties;
     data: {
-        images: string[];
+        images: ImageMetadata[];
         currentIndex: number;
         onImageSelect: (index: number) => void;
         imageRefreshKeys?: Record<string, number>;
@@ -30,28 +31,25 @@ export function ThumbnailItem({ index, style, data }: ThumbnailItemProps) {
     if (!image) return null;
 
     const isSelected = index === currentIndex;
-    const refreshKey = imageRefreshKeys[image] || 0;
-    const imageSrc = `/images/${encodeURIComponent(image)}${refreshKey > 0 ? `?v=${refreshKey}` : ''}`;
+    const refreshKey = imageRefreshKeys[image.filename] || 0;
+    const imageSrc = `/images/${encodeURIComponent(image.filename)}${refreshKey > 0 ? `?v=${refreshKey}` : ''}`;
 
     return (
-        <div style={style} className="p-2">
+        <div ref={ref} style={style} className="px-2 py-1">
             <div
-                ref={ref}
                 className={`
                     border-2 rounded-lg transition-all duration-200 ease-in-out
                     ${isSelected
-                        ? 'border-blue-500 shadow-md'
-                        : 'border-gray-200 dark:border-gray-700 shadow-none'
+                        ? 'border-blue-500 shadow-xl'
+                        : 'border-gray-200 dark:border-gray-700 shadow-sm'
                     }
-                    hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600
-                    ${isSelected ? 'hover:border-blue-500' : ''}
+                    hover:shadow-lg hover:scale-[1.02]
                 `}
             >
                 <button
                     onClick={() => onImageSelect(index)}
                     className="w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 rounded-lg"
                 >
-                    {/* Image container */}
                     <div className="w-full h-20 bg-gray-100 dark:bg-gray-800 rounded-t-lg flex items-center justify-center relative overflow-hidden">
                         {!inView ? (
                             <span className="text-xs text-gray-400">•••</span>
@@ -61,7 +59,7 @@ export function ThumbnailItem({ index, style, data }: ThumbnailItemProps) {
                                 <Image
                                     key={refreshKey}
                                     src={imageSrc}
-                                    alt={image}
+                                    alt={image.filename}
                                     width={112}
                                     height={112}
                                     className={`
@@ -81,11 +79,26 @@ export function ThumbnailItem({ index, style, data }: ThumbnailItemProps) {
                         )}
                     </div>
 
-                    {/* Index label */}
+                    {/* Image info */}
                     <div className="p-2">
-                        <span className="text-xs text-gray-600 dark:text-gray-400 truncate block">
+                        <div className="text-xs text-gray-600 dark:text-gray-400 truncate">
                             {index + 1}
-                        </span>
+                        </div>
+                        {image.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                                {image.tags.slice(0, 2).map(tag => (
+                                    <span
+                                        key={tag}
+                                        className="bg-blue-100 text-blue-800 px-1 py-0.5 rounded text-xs leading-none"
+                                    >
+                                        {tag}
+                                    </span>
+                                ))}
+                                {image.tags.length > 2 && (
+                                    <span className="text-xs text-gray-400">+{image.tags.length - 2}</span>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </button>
             </div>

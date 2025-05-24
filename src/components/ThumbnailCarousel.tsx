@@ -3,9 +3,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { FixedSizeList as List } from 'react-window';
 import { ThumbnailItem } from './ThumbnailItem';
+import { ImageMetadata } from '../types';
 
 interface ThumbnailCarouselProps {
-    images: string[];
+    images: ImageMetadata[];
     currentIndex: number;
     onImageSelect: (index: number) => void;
     imageRefreshKeys?: Record<string, number>;

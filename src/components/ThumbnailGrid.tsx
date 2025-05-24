@@ -3,16 +3,17 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useInView } from 'react-intersection-observer';
+import { ImageMetadata } from '../types';
 
 interface ThumbnailGridProps {
-    images: string[];
+    images: ImageMetadata[];
     currentIndex: number;
     onImageSelect: (index: number) => void;
     imageRefreshKeys?: Record<string, number>;
 }
 
 interface GridItemProps {
-    image: string;
+    image: ImageMetadata;
     index: number;
     currentIndex: number;
     onImageSelect: (index: number) => void;
@@ -30,8 +31,8 @@ function GridItem({ image, index, currentIndex, onImageSelect, imageRefreshKeys 
     });
 
     const isSelected = index === currentIndex;
-    const refreshKey = imageRefreshKeys[image] || 0;
-    const imageSrc = `/images/${encodeURIComponent(image)}${refreshKey > 0 ? `?v=${refreshKey}` : ''}`;
+    const refreshKey = imageRefreshKeys[image.filename] || 0;
+    const imageSrc = `/images/${encodeURIComponent(image.filename)}${refreshKey > 0 ? `?v=${refreshKey}` : ''}`;
 
     return (
         <div
@@ -58,7 +59,7 @@ function GridItem({ image, index, currentIndex, onImageSelect, imageRefreshKeys 
                             <Image
                                 key={refreshKey}
                                 src={imageSrc}
-                                alt={image}
+                                alt={image.filename}
                                 fill
                                 className={`
                                     object-cover transition-opacity duration-300 ease-in-out
@@ -76,11 +77,31 @@ function GridItem({ image, index, currentIndex, onImageSelect, imageRefreshKeys 
                     )}
                 </div>
 
-                {/* Image number */}
+                {/* Image info */}
                 <div className="p-2">
-                    <span className="text-xs text-gray-600 dark:text-gray-400 block text-center">
+                    <div className="text-xs text-gray-600 dark:text-gray-400 text-center mb-1">
                         {index + 1}
-                    </span>
+                    </div>
+                    {image.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 justify-center">
+                            {image.tags.slice(0, 3).map(tag => (
+                                <span
+                                    key={tag}
+                                    className="bg-blue-100 text-blue-800 px-1 py-0.5 rounded text-xs leading-none"
+                                >
+                                    {tag}
+                                </span>
+                            ))}
+                            {image.tags.length > 3 && (
+                                <span className="text-xs text-gray-400">+{image.tags.length - 3}</span>
+                            )}
+                        </div>
+                    )}
+                    {image.description && (
+                        <div className="text-xs text-gray-500 mt-1 truncate text-center">
+                            {image.description}
+                        </div>
+                    )}
                 </div>
             </button>
         </div>
@@ -141,7 +162,7 @@ export function ThumbnailGrid({
                 }}
             >
                 {images.map((image, index) => (
-                    <div key={`${image}-${index}`} id={`grid-item-${index}`}>
+                    <div key={`${image.filename}-${index}`} id={`grid-item-${index}`}>
                         <GridItem
                             image={image}
                             index={index}
