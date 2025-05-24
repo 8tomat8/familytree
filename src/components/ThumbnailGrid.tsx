@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useInView } from 'react-intersection-observer';
-import { Box, Typography, Card, CardActionArea } from '@mui/material';
 
 interface ThumbnailGridProps {
     images: string[];
@@ -35,34 +34,25 @@ function GridItem({ image, index, currentIndex, onImageSelect, imageRefreshKeys 
     const imageSrc = `/images/${encodeURIComponent(image)}${refreshKey > 0 ? `?v=${refreshKey}` : ''}`;
 
     return (
-        <Card
+        <div
             ref={ref}
-            sx={{
-                border: 2,
-                borderColor: isSelected ? 'primary.main' : 'divider',
-                boxShadow: isSelected ? 4 : 1,
-                '&:hover': {
-                    boxShadow: 6,
-                    transform: 'scale(1.02)',
-                },
-                transition: 'all 0.2s ease-in-out',
-            }}
+            className={`
+                border-2 rounded-lg transition-all duration-200 ease-in-out
+                ${isSelected
+                    ? 'border-blue-500 shadow-xl'
+                    : 'border-gray-200 dark:border-gray-700 shadow-sm'
+                }
+                hover:shadow-xl hover:scale-[1.02]
+            `}
         >
-            <CardActionArea onClick={() => onImageSelect(index)}>
+            <button
+                onClick={() => onImageSelect(index)}
+                className="w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 rounded-lg"
+            >
                 {/* Aspect ratio container for square thumbnails */}
-                <Box
-                    sx={{
-                        aspectRatio: '1',
-                        bgcolor: 'action.hover',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        position: 'relative',
-                        overflow: 'hidden',
-                    }}
-                >
+                <div className="aspect-square bg-gray-100 dark:bg-gray-800 flex items-center justify-center relative overflow-hidden rounded-t-lg">
                     {!inView ? (
-                        <Typography variant="body2" color="text.disabled">•••</Typography>
+                        <span className="text-sm text-gray-400">•••</span>
                     ) : (
                         <>
                             <Image
@@ -70,35 +60,30 @@ function GridItem({ image, index, currentIndex, onImageSelect, imageRefreshKeys 
                                 src={imageSrc}
                                 alt={image}
                                 fill
-                                style={{
-                                    objectFit: 'cover',
-                                    opacity: isLoaded ? 1 : 0,
-                                    transition: 'opacity 0.3s ease',
-                                }}
+                                className={`
+                                    object-cover transition-opacity duration-300 ease-in-out
+                                    ${isLoaded ? 'opacity-100' : 'opacity-0'}
+                                `}
                                 onLoad={() => setIsLoaded(true)}
                                 unoptimized
                             />
                             {!isLoaded && (
-                                <Typography
-                                    variant="body2"
-                                    color="text.disabled"
-                                    sx={{ position: 'absolute' }}
-                                >
+                                <span className="text-sm text-gray-400 absolute">
                                     Loading...
-                                </Typography>
+                                </span>
                             )}
                         </>
                     )}
-                </Box>
+                </div>
 
                 {/* Image number */}
-                <Box sx={{ p: 1 }}>
-                    <Typography variant="caption" color="text.secondary" align="center" display="block">
+                <div className="p-2">
+                    <span className="text-xs text-gray-600 dark:text-gray-400 block text-center">
                         {index + 1}
-                    </Typography>
-                </Box>
-            </CardActionArea>
-        </Card>
+                    </span>
+                </div>
+            </button>
+        </div>
     );
 }
 
@@ -140,24 +125,23 @@ export function ThumbnailGrid({
     }, [currentIndex, images.length]);
 
     return (
-        <Box sx={{ p: 2, bgcolor: 'background.default' }}>
+        <div className="p-4 bg-white dark:bg-gray-900">
             {/* Header with image count */}
-            <Box sx={{ mb: 2, textAlign: 'center' }}>
-                <Typography variant="body2" color="text.secondary">
+            <div className="mb-4 text-center">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                     {images.length} image{images.length !== 1 ? 's' : ''} in grid view
-                </Typography>
-            </Box>
+                </p>
+            </div>
 
             {/* Responsive grid */}
-            <Box
-                sx={{
-                    display: 'grid',
-                    gap: 2,
+            <div
+                className="grid gap-4"
+                style={{
                     gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
                 }}
             >
                 {images.map((image, index) => (
-                    <Box key={`${image}-${index}`} id={`grid-item-${index}`}>
+                    <div key={`${image}-${index}`} id={`grid-item-${index}`}>
                         <GridItem
                             image={image}
                             index={index}
@@ -165,9 +149,9 @@ export function ThumbnailGrid({
                             onImageSelect={onImageSelect}
                             imageRefreshKeys={imageRefreshKeys}
                         />
-                    </Box>
+                    </div>
                 ))}
-            </Box>
-        </Box>
+            </div>
+        </div>
     );
 } 

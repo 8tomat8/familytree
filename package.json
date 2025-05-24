@@ -9,10 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.0",
-    "@mui/icons-material": "^7.1.0",
-    "@mui/material": "^7.1.0",
+    "@fortawesome/fontawesome-svg-core": "^6.7.2",
+    "@fortawesome/free-solid-svg-icons": "^6.7.2",
+    "@fortawesome/react-fontawesome": "^0.2.2",
     "@types/react-window": "^1.8.8",
     "next": "15.3.2",
     "react": "^19.0.0",

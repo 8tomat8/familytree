@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTh, faTimes } from '@fortawesome/free-solid-svg-icons';
 import { ThumbnailCarousel } from './ThumbnailCarousel';
 import { ThumbnailGrid } from './ThumbnailGrid';
 import { ImageDisplay } from './ImageDisplay';
 import { ImageListResponse } from '../types';
-import { Box, Typography, Button, Modal, IconButton, Paper } from '@mui/material';
-import { GridView, Close } from '@mui/icons-material';
 
 export function Gallery() {
     const [images, setImages] = useState<string[]>([]);
@@ -69,27 +69,27 @@ export function Gallery() {
 
     if (loading) {
         return (
-            <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
-                <Typography color="text.secondary">Loading images...</Typography>
-            </Box>
+            <div className="flex justify-center items-center h-screen">
+                <p className="text-gray-500">Loading images...</p>
+            </div>
         );
     }
 
     if (error) {
         return (
-            <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
-                <Typography color="error">Error: {error}</Typography>
-            </Box>
+            <div className="flex justify-center items-center h-screen">
+                <p className="text-red-500">Error: {error}</p>
+            </div>
         );
     }
 
     if (images.length === 0) {
         return (
-            <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
-                <Typography color="text.secondary">
-                    No images found in <Box component="code" sx={{ bgcolor: 'action.hover', px: 1, py: 0.5, borderRadius: 1 }}>public/images</Box>
-                </Typography>
-            </Box>
+            <div className="flex justify-center items-center h-screen">
+                <p className="text-gray-500">
+                    No images found in <code className="bg-gray-100 px-2 py-1 rounded dark:bg-gray-800">public/images</code>
+                </p>
+            </div>
         );
     }
 
@@ -102,7 +102,7 @@ export function Gallery() {
     }
 
     return (
-        <Box display="flex" height="100vh" bgcolor="background.default">
+        <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
             <ThumbnailCarousel
                 images={images}
                 currentIndex={index}
@@ -110,35 +110,17 @@ export function Gallery() {
                 imageRefreshKeys={imageRefreshKeys}
             />
 
-            <Box flex={1} position="relative">
+            <div className="flex-1 relative">
                 {/* Navigation controls overlay */}
-                <Box
-                    position="absolute"
-                    top={2}
-                    left="50%"
-                    sx={{ transform: 'translateX(-50%)' }}
-                    zIndex={10}
-                    display="flex"
-                    alignItems="center"
-                    gap={2}
-                >
-                    <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ bgcolor: 'rgba(0,0,0,0.5)', px: 1, py: 0.5, borderRadius: 1 }}
-                    >
-                        Use ← → arrow keys to navigate
-                    </Typography>
-                    <Button
-                        variant="contained"
-                        size="small"
-                        startIcon={<GridView />}
+                <div className="absolute top-2 left-1/2 transform -translate-x-1/2 z-10 flex items-center gap-2">
+                    <button
                         onClick={() => setShowGridOverlay(true)}
-                        sx={{ fontSize: '0.75rem' }}
+                        className="flex items-center gap-2 px-3 py-1.5 text-sm bg-blue-500 hover:bg-blue-600 text-white rounded font-medium transition-colors"
                     >
+                        <FontAwesomeIcon icon={faTh} className="w-4 h-4" />
                         Grid View
-                    </Button>
-                </Box>
+                    </button>
+                </div>
 
                 {/* Full-size image display */}
                 <ImageDisplay
@@ -147,69 +129,37 @@ export function Gallery() {
                 />
 
                 {/* Image counter overlay */}
-                <Box
-                    position="absolute"
-                    bottom={2}
-                    left="50%"
-                    sx={{ transform: 'translateX(-50%)' }}
-                    zIndex={10}
-                >
-                    <Typography
-                        variant="body2"
-                        sx={{ bgcolor: 'rgba(0,0,0,0.5)', px: 2, py: 1, borderRadius: 1 }}
-                    >
+                <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 z-10">
+                    <div className="bg-black bg-opacity-50 text-white px-4 py-2 rounded text-sm">
                         {index + 1} / {images.length}
-                    </Typography>
-                </Box>
-            </Box>
+                    </div>
+                </div>
+            </div>
 
             {/* Grid Overlay Modal */}
-            <Modal
-                open={showGridOverlay}
-                onClose={() => setShowGridOverlay(false)}
-                sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    p: 2,
-                }}
-            >
-                <Paper
-                    sx={{
-                        maxWidth: '90vw',
-                        maxHeight: '90vh',
-                        width: '100%',
-                        position: 'relative',
-                        overflow: 'hidden',
-                    }}
-                >
-                    {/* Close button */}
-                    <IconButton
-                        onClick={() => setShowGridOverlay(false)}
-                        sx={{
-                            position: 'absolute',
-                            top: 1,
-                            right: 1,
-                            zIndex: 10,
-                            bgcolor: 'background.paper',
-                            '&:hover': { bgcolor: 'action.hover' },
-                        }}
-                        size="large"
-                    >
-                        <Close />
-                    </IconButton>
+            {showGridOverlay && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-[90vw] max-h-[90vh] w-full relative overflow-hidden">
+                        {/* Close button */}
+                        <button
+                            onClick={() => setShowGridOverlay(false)}
+                            className="absolute top-2 right-2 z-10 p-2 bg-white dark:bg-gray-700 rounded-full shadow-md hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                        >
+                            <FontAwesomeIcon icon={faTimes} className="w-6 h-6" />
+                        </button>
 
-                    {/* Grid content */}
-                    <Box sx={{ overflow: 'auto', maxHeight: '90vh' }}>
-                        <ThumbnailGrid
-                            images={images}
-                            currentIndex={index}
-                            onImageSelect={handleImageSelect}
-                            imageRefreshKeys={imageRefreshKeys}
-                        />
-                    </Box>
-                </Paper>
-            </Modal>
-        </Box>
+                        {/* Grid content */}
+                        <div className="overflow-auto max-h-[90vh]">
+                            <ThumbnailGrid
+                                images={images}
+                                currentIndex={index}
+                                onImageSelect={handleImageSelect}
+                                imageRefreshKeys={imageRefreshKeys}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
     );
 } 

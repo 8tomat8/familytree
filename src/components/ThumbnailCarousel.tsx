@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { FixedSizeList as List } from 'react-window';
 import { ThumbnailItem } from './ThumbnailItem';
-import { Box, Typography, Divider } from '@mui/material';
 
 interface ThumbnailCarouselProps {
     images: string[];
@@ -48,28 +47,9 @@ export function ThumbnailCarousel({
     };
 
     return (
-        <Box
-            sx={{
-                width: 128, // w-32 equivalent
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                bgcolor: 'background.paper',
-                borderRight: 1,
-                borderColor: 'divider',
-            }}
-        >
-            {/* Header with image count */}
-            <Box sx={{ p: 1, bgcolor: 'action.hover' }}>
-                <Typography variant="caption" color="text.secondary" align="center" display="block">
-                    {images.length} image{images.length !== 1 ? 's' : ''}
-                </Typography>
-            </Box>
-
-            <Divider />
-
+        <div className="w-32 h-full flex flex-col bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
             {/* Virtualized thumbnail list */}
-            <Box flex={1}>
+            <div className="flex-1">
                 <List
                     ref={listRef}
                     height={listHeight}
@@ -80,7 +60,7 @@ export function ThumbnailCarousel({
                 >
                     {ThumbnailItem}
                 </List>
-            </Box>
-        </Box>
+            </div>
+        </div>
     );
 } 

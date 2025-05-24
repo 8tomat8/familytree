@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { Box, IconButton, Tooltip } from '@mui/material';
-import { RotateLeft, RotateRight } from '@mui/icons-material';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faRotateLeft, faRotateRight } from '@fortawesome/free-solid-svg-icons';
 import { useDebounce } from '../hooks/useDebounce';
 import { ValidDegrees } from '../types/image';
 
@@ -71,51 +71,35 @@ export function ImageDisplay({ src, onImageRotated }: ImageDisplayProps) {
     return (
         <div className="relative w-full h-full">
             {/* Rotation controls overlay */}
-            <Box
-                position="absolute"
-                top={16}
-                right={16}
-                zIndex={10}
-                display="flex"
-                gap={1}
-                sx={{
-                    bgcolor: 'rgba(0,0,0,0.7)',
-                    borderRadius: 2,
-                    p: 0.5,
-                }}
-            >
-                <Tooltip title="Rotate Left (90°)">
-                    <IconButton
-                        onClick={debouncedRotateLeft}
-                        disabled={isRotating}
-                        sx={{
-                            color: 'white',
-                            '&:hover': {
-                                bgcolor: 'rgba(255,255,255,0.1)'
-                            }
-                        }}
-                        size="small"
-                    >
-                        <RotateLeft />
-                    </IconButton>
-                </Tooltip>
+            <div className="absolute top-4 right-4 z-10 flex gap-1 bg-black bg-opacity-70 rounded-lg p-1">
+                <button
+                    onClick={debouncedRotateLeft}
+                    disabled={isRotating}
+                    title="Rotate Left (90°)"
+                    className={`
+                        p-2 text-white rounded hover:bg-white hover:bg-opacity-10 
+                        transition-colors duration-200 
+                        ${isRotating ? 'opacity-50 cursor-not-allowed' : 'hover:bg-opacity-20'}
+                        focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50
+                    `}
+                >
+                    <FontAwesomeIcon icon={faRotateLeft} className="w-5 h-5" />
+                </button>
 
-                <Tooltip title="Rotate Right (90°)">
-                    <IconButton
-                        onClick={debouncedRotateRight}
-                        disabled={isRotating}
-                        sx={{
-                            color: 'white',
-                            '&:hover': {
-                                bgcolor: 'rgba(255,255,255,0.1)'
-                            }
-                        }}
-                        size="small"
-                    >
-                        <RotateRight />
-                    </IconButton>
-                </Tooltip>
-            </Box>
+                <button
+                    onClick={debouncedRotateRight}
+                    disabled={isRotating}
+                    title="Rotate Right (90°)"
+                    className={`
+                        p-2 text-white rounded hover:bg-white hover:bg-opacity-10 
+                        transition-colors duration-200 
+                        ${isRotating ? 'opacity-50 cursor-not-allowed' : 'hover:bg-opacity-20'}
+                        focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50
+                    `}
+                >
+                    <FontAwesomeIcon icon={faRotateRight} className="w-5 h-5" />
+                </button>
+            </div>
 
             <Image
                 key={refreshKey}

@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { useInView } from 'react-intersection-observer';
-import { Box, Typography, Card, CardActionArea } from '@mui/material';
 
 interface ThumbnailItemProps {
     index: number;
@@ -35,37 +34,27 @@ export function ThumbnailItem({ index, style, data }: ThumbnailItemProps) {
     const imageSrc = `/images/${encodeURIComponent(image)}${refreshKey > 0 ? `?v=${refreshKey}` : ''}`;
 
     return (
-        <Box style={style} sx={{ p: 0.5 }}>
-            <Card
+        <div style={style} className="p-2">
+            <div
                 ref={ref}
-                sx={{
-                    border: 2,
-                    borderColor: isSelected ? 'primary.main' : 'divider',
-                    boxShadow: isSelected ? 2 : 0,
-                    '&:hover': {
-                        boxShadow: 2,
-                        borderColor: isSelected ? 'primary.main' : 'action.hover',
-                    },
-                    transition: 'all 0.2s ease-in-out',
-                }}
+                className={`
+                    border-2 rounded-lg transition-all duration-200 ease-in-out
+                    ${isSelected
+                        ? 'border-blue-500 shadow-md'
+                        : 'border-gray-200 dark:border-gray-700 shadow-none'
+                    }
+                    hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600
+                    ${isSelected ? 'hover:border-blue-500' : ''}
+                `}
             >
-                <CardActionArea onClick={() => onImageSelect(index)}>
-                    {/* Always show placeholder initially */}
-                    <Box
-                        sx={{
-                            width: '100%',
-                            height: 80, // h-20 equivalent
-                            bgcolor: 'action.hover',
-                            borderRadius: 1,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            position: 'relative',
-                            overflow: 'hidden',
-                        }}
-                    >
+                <button
+                    onClick={() => onImageSelect(index)}
+                    className="w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 rounded-lg"
+                >
+                    {/* Image container */}
+                    <div className="w-full h-20 bg-gray-100 dark:bg-gray-800 rounded-t-lg flex items-center justify-center relative overflow-hidden">
                         {!inView ? (
-                            <Typography variant="caption" color="text.disabled">•••</Typography>
+                            <span className="text-xs text-gray-400">•••</span>
                         ) : (
                             <>
                                 {/* Image loads only when in view */}
@@ -75,38 +64,31 @@ export function ThumbnailItem({ index, style, data }: ThumbnailItemProps) {
                                     alt={image}
                                     width={112}
                                     height={112}
-                                    style={{
-                                        objectFit: 'cover',
-                                        borderRadius: '4px',
-                                        width: '100%',
-                                        height: '80px',
-                                        position: 'absolute',
-                                        inset: 0,
-                                        opacity: isLoaded ? 1 : 0,
-                                        transition: 'opacity 0.3s ease',
-                                    }}
+                                    className={`
+                                        object-cover rounded-t-lg w-full h-20 absolute inset-0 
+                                        transition-opacity duration-300 ease-in-out
+                                        ${isLoaded ? 'opacity-100' : 'opacity-0'}
+                                    `}
                                     onLoad={() => setIsLoaded(true)}
                                     unoptimized
                                 />
                                 {!isLoaded && (
-                                    <Typography
-                                        variant="caption"
-                                        color="text.disabled"
-                                        sx={{ position: 'absolute' }}
-                                    >
+                                    <span className="text-xs text-gray-400 absolute">
                                         Loading...
-                                    </Typography>
+                                    </span>
                                 )}
                             </>
                         )}
-                    </Box>
-                    <Box sx={{ p: 0.5 }}>
-                        <Typography variant="caption" color="text.secondary" noWrap>
+                    </div>
+
+                    {/* Index label */}
+                    <div className="p-2">
+                        <span className="text-xs text-gray-600 dark:text-gray-400 truncate block">
                             {index + 1}
-                        </Typography>
-                    </Box>
-                </CardActionArea>
-            </Card>
-        </Box>
+                        </span>
+                    </div>
+                </button>
+            </div>
+        </div>
     );
 } 
