@@ -32,7 +32,7 @@ export function ThumbnailItem({ index, style, data }: ThumbnailItemProps) {
 
     const isSelected = index === currentIndex;
     const refreshKey = imageRefreshKeys[image] || 0;
-    const imageSrc = `/static/img/${encodeURIComponent(image)}${refreshKey > 0 ? `?v=${refreshKey}` : ''}`;
+    const imageSrc = `/images/${encodeURIComponent(image)}${refreshKey > 0 ? `?v=${refreshKey}` : ''}`;
 
     return (
         <Box style={style} sx={{ p: 0.5 }}>

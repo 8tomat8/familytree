@@ -17,7 +17,7 @@ export function ImageDisplay({ src, onImageRotated }: ImageDisplayProps) {
     const [refreshKey, setRefreshKey] = useState(0);
 
     // Serve images from static endpoint
-    const imageSrc = `/static/img/${encodeURIComponent(src)}`;
+    const imageSrc = `/images/${encodeURIComponent(src)}`;
 
     const handleRotation = async (degrees: ValidDegrees) => {
         if (isRotating) return;

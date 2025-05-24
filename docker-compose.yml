@@ -1,11 +1,6 @@
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    environment:
-      - NODE_ENV=production
-      - PORT=3000
+  nginx:
+    image: nginx:alpine
     labels:
       - traefik.enable=true
       - traefik.http.routers.familytree.tls=true
@@ -13,7 +8,29 @@ services:
       - traefik.http.routers.familytree.tls.domains[0].main=${DOMAIN}
       - traefik.http.routers.familytree.rule=Host(`${DOMAIN}`)
       - traefik.http.routers.familytree.service=familytree
-      - traefik.http.services.familytree.loadbalancer.server.port=3000
+      - traefik.http.services.familytree.loadbalancer.server.port=80
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - images:/app/public/images:ro
+    depends_on:
+      - app
+    restart: unless-stopped
+    networks:
+      - mynetwork
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:80/api/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
     volumes:
       # Mount images directory as volume (update path as needed)
       - images:/app/public/images
@@ -22,12 +39,9 @@ services:
     restart: unless-stopped
     networks:
       - mynetwork
-    healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/api/health" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+    # Remove external exposure since nginx will handle it
+    expose:
+      - "3000"
 
 networks:
   mynetwork:

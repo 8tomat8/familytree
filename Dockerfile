@@ -52,18 +52,12 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Create nextjs user
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
 # Copy built application
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 
 # Copy production dependencies
-COPY --from=deps --chown=nextjs:nodejs /app/node_modules ./node_modules
-
-USER nextjs
+COPY --from=deps /app/node_modules ./node_modules
 
 EXPOSE 3000
 
