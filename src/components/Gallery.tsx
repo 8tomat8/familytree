@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTh, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { useSwipeable } from 'react-swipeable';
 import { ThumbnailCarousel } from './ThumbnailCarousel';
 import { ThumbnailGrid } from './ThumbnailGrid';
 import { ImageDisplay } from './ImageDisplay';
@@ -15,6 +16,31 @@ export function Gallery() {
     const [error, setError] = useState<string | null>(null);
     const [showGridOverlay, setShowGridOverlay] = useState(false);
     const [imageRefreshKeys, setImageRefreshKeys] = useState<Record<string, number>>({});
+
+    // Navigation functions
+    const goToPrevious = () => {
+        if (images.length > 1) {
+            setIndex(prev => prev > 0 ? prev - 1 : images.length - 1);
+        }
+    };
+
+    const goToNext = () => {
+        if (images.length > 1) {
+            setIndex(prev => prev < images.length - 1 ? prev + 1 : 0);
+        }
+    };
+
+    // Swipe handlers - must be called before any conditional logic
+    const swipeHandlers = useSwipeable({
+        onSwipedLeft: goToNext,
+        onSwipedRight: goToPrevious,
+        trackMouse: true, // Also track mouse drags for desktop
+        preventScrollOnSwipe: true,
+        trackTouch: true,
+        delta: 10, // Minimum distance to trigger swipe
+        swipeDuration: 500, // Maximum time for a swipe gesture
+        touchEventOptions: { passive: false }, // Allow preventDefault
+    });
 
     // Handle image rotation refresh
     const handleImageRotated = (filename: string) => {
@@ -57,9 +83,9 @@ export function Gallery() {
             }
 
             if (event.key === 'ArrowRight') {
-                setIndex(prev => prev < images.length - 1 ? prev + 1 : 0);
+                goToNext();
             } else if (event.key === 'ArrowLeft') {
-                setIndex(prev => prev > 0 ? prev - 1 : images.length - 1);
+                goToPrevious();
             }
         };
 
@@ -110,7 +136,7 @@ export function Gallery() {
                 imageRefreshKeys={imageRefreshKeys}
             />
 
-            <div className="flex-1 relative">
+            <div className="flex-1 relative" {...swipeHandlers}>
                 {/* Navigation controls overlay */}
                 <div className="absolute top-2 left-1/2 transform -translate-x-1/2 z-10 flex items-center gap-2">
                     <button
