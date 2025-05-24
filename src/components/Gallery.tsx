@@ -129,12 +129,14 @@ export function Gallery() {
 
     return (
         <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
-            <ThumbnailCarousel
-                images={images}
-                currentIndex={index}
-                onImageSelect={handleImageSelect}
-                imageRefreshKeys={imageRefreshKeys}
-            />
+            <div className="hidden md:block">
+                <ThumbnailCarousel
+                    images={images}
+                    currentIndex={index}
+                    onImageSelect={handleImageSelect}
+                    imageRefreshKeys={imageRefreshKeys}
+                />
+            </div>
 
             <div className="flex-1 relative" {...swipeHandlers}>
                 {/* Navigation controls overlay */}
