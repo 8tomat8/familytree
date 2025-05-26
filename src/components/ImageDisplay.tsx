@@ -5,7 +5,8 @@ import Image from 'next/image';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faRotateLeft, faRotateRight } from '@fortawesome/free-solid-svg-icons';
 import { useDebounce } from '../hooks/useDebounce';
-import { ValidDegrees } from '../types/image';
+import { ValidDegrees } from '@shared/types';
+import { api } from '../lib/api';
 
 interface ImageDisplayProps {
     src: string;
@@ -26,25 +27,7 @@ export function ImageDisplay({ src, onImageRotated }: ImageDisplayProps) {
         setIsRotating(true);
 
         try {
-            const url = `/api/images/${encodeURIComponent(src)}/rotate`;
-            console.log(`[ImageDisplay] Making POST request to: ${url}`);
-
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ degrees }),
-            });
-
-            console.log(`[ImageDisplay] Response status: ${response.status} ${response.statusText}`);
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error(`[ImageDisplay] Server error: ${response.status} - ${errorText}`);
-                throw new Error(`Failed to rotate image: ${response.status} ${response.statusText}`);
-            }
-
+            await api.images.rotateImage(src, degrees);
             console.log(`[ImageDisplay] Successfully rotated ${src} by ${degrees} degrees`);
 
             // Force image reload by updating refresh key

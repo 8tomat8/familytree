@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dbImageService, logger } from '@/lib';
+import { imageService, logger } from '@/lib';
 
 export async function POST(request: NextRequest) {
     try {
@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
         });
 
         // Force sync filesystem with database
-        const syncResult = await dbImageService.syncImages();
+        const syncResult = await imageService.syncImages();
 
         return NextResponse.json({
             success: true,

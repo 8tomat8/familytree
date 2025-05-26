@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dbImageService, logger } from '@/lib';
+import { imageService, logger } from '@/lib';
 
 export async function GET(request: NextRequest) {
     try {
@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
             userAgent: request.headers.get('user-agent') || 'unknown'
         });
 
-        const stats = await dbImageService.getStats();
+        const stats = await imageService.getStats();
 
         return NextResponse.json({
             success: true,

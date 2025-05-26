@@ -171,6 +171,46 @@ class ApiClient {
         }
     }
 
+    async patch<T = unknown>(
+        url: string,
+        body?: unknown,
+        options: ApiRequestOptions = {}
+    ): Promise<ApiResponse<T>> {
+        try {
+            const response = await this.fetchWithLogging(url, {
+                ...options,
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...options.headers
+                },
+                body: body ? JSON.stringify(body) : undefined
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                return {
+                    error: errorText || `HTTP ${response.status}`,
+                    status: response.status,
+                    ok: false
+                };
+            }
+
+            const data = await response.json();
+            return {
+                data,
+                status: response.status,
+                ok: true
+            };
+        } catch (error) {
+            return {
+                error: error instanceof Error ? error.message : 'Network error',
+                status: 0,
+                ok: false
+            };
+        }
+    }
+
     async delete<T = unknown>(url: string, options: ApiRequestOptions = {}): Promise<ApiResponse<T>> {
         try {
             const response = await this.fetchWithLogging(url, {

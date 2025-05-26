@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import sharp from 'sharp';
-import { RotateImageRequest, VALID_DEGREES } from '@/types/image';
+import { RotateImageRequest, VALID_DEGREES } from '@shared/types';
 import { imageService, logger } from '@/lib';
 
 export async function POST(
@@ -57,6 +57,9 @@ export async function POST(
 
         // Write the rotated image back
         await imageService.writeImage(filename, rotatedBuffer);
+
+        // Update image metadata in database (dimensions change for 90° and 270° rotations)
+        await imageService.registerImage(filename);
 
         logger.logApiResponse('POST', apiPath, 200, {
             userAgent: request.headers.get('user-agent') || 'unknown'

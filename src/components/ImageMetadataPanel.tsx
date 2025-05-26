@@ -2,8 +2,10 @@
 
 import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEdit, faSave, faTimes, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons';
-import { ImageMetadata, ImageUpdateResponse } from '../types';
+import { faSave } from '@fortawesome/free-solid-svg-icons';
+import { ImageMetadata } from '@shared/types';
+import { TagsInput } from './TagsInput';
+import { appNotifications } from '../lib/notifications';
 
 interface ImageMetadataPanelProps {
     image: ImageMetadata;
@@ -11,57 +13,70 @@ interface ImageMetadataPanelProps {
 }
 
 export function ImageMetadataPanel({ image, onUpdate }: ImageMetadataPanelProps) {
-    const [isEditing, setIsEditing] = useState(false);
     const [tags, setTags] = useState<string[]>(image.tags || []);
     const [description, setDescription] = useState(image.description || '');
-    const [newTag, setNewTag] = useState('');
+    const [dateTaken, setDateTaken] = useState<Date | null>(
+        image.dateTaken ? new Date(image.dateTaken) : null
+    );
     const [isSaving, setIsSaving] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    // Notifications are now handled via appNotifications utility
+
+    const handleSave = async () => {
+        setIsSaving(true);
+
+        try {
+            await onUpdate({
+                filename: image.filename,
+                description,
+                tags,
+                dateTaken: dateTaken?.toISOString() || undefined
+            });
+            appNotifications.metadataSaved();
+        } catch (error) {
+            appNotifications.metadataSaveError(error as string);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const hasChanges = description !== (image.description || '') ||
+        JSON.stringify(tags) !== JSON.stringify(image.tags || []) ||
+        (dateTaken?.toISOString() || null) !== (image.dateTaken || null);
 
     return (
-        <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
+        <div className="h-full flex flex-col bg-white dark:bg-gray-800 p-4 overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
                     Image Metadata
                 </h3>
-            </div>
-
-            {error && (
-                <div className="mb-4 p-2 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
-                    {error}
+                <div className="flex gap-2">
+                    {hasChanges && (
+                        <button
+                            onClick={handleSave}
+                            disabled={isSaving}
+                            className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 disabled:opacity-50"
+                        >
+                            <FontAwesomeIcon icon={faSave} className="mr-1" />
+                            {isSaving ? 'Saving...' : 'Save'}
+                        </button>
+                    )}
                 </div>
-            )}
+            </div>
 
             {/* Tags Section */}
             <div className="mb-4">
                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Tags
                 </label>
-                <div className="space-y-2">
-                    <div className="flex flex-wrap gap-1">
-                        {tags.map(tag => (
-                            <span
-                                key={tag}
-                                className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs flex items-center gap-1"
-                            >
-                                {tag}
-                            </span>
-                        ))}
-                    </div>
-                    <div className="flex gap-2">
-                        <input
-                            type="text"
-                            value={newTag}
-                            onChange={(e) => setNewTag(e.target.value)}
-                            placeholder="Add new tag"
-                            className="flex-1 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-gray-200"
-                        />
-                    </div>
-                </div>
+                <TagsInput
+                    tags={tags}
+                    onTagsChange={setTags}
+                    placeholder="Add new tag"
+                />
             </div>
 
             {/* Description Section */}
-            <div>
+            <div className="mb-4">
                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Description
                 </label>

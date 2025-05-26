@@ -13,6 +13,8 @@ export const images = pgTable('images', {
     isActive: boolean('is_active').default(true).notNull(),
     description: text('description'),
     tags: text('tags').array(),
+    dateTaken: timestamp('date_taken'), // Full timestamp when known
+    datePrecision: varchar('date_precision', { length: 20 }), // 'hour', 'day', 'month', 'year', 'decade'
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { FixedSizeList as List } from 'react-window';
 import { ThumbnailItem } from './ThumbnailItem';
-import { ImageMetadata } from '../types';
+import { ImageMetadata } from '@shared/types';
 
 interface ThumbnailCarouselProps {
     images: ImageMetadata[];

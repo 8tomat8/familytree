@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useInView } from 'react-intersection-observer';
-import { ImageMetadata } from '../types';
+import { ImageMetadata } from '@shared/types';
 
 interface ThumbnailGridProps {
     images: ImageMetadata[];

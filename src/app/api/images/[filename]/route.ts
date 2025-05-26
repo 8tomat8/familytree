@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dbImageService, logger } from '@/lib';
+import { imageService, logger } from '@/lib';
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { filename: string } }
+    { params }: { params: Promise<{ filename: string }> }
 ) {
-    try {
-        const filename = params.filename;
+    const { filename } = await params;
 
+    try {
         logger.logApiRequest('GET', `/api/images/${filename}`, {
             userAgent: request.headers.get('user-agent') || 'unknown'
         });
 
-        const image = await dbImageService.getImage(filename);
+        const image = await imageService.getImage(filename);
 
         if (!image) {
             return NextResponse.json(
@@ -33,6 +33,8 @@ export async function GET(
                 checksum: image.checksum,
                 tags: image.tags || [],
                 description: image.description,
+                dateTaken: image.dateTaken?.toISOString(),
+                datePrecision: image.datePrecision,
                 isActive: image.isActive,
                 createdAt: image.createdAt,
                 updatedAt: image.updatedAt
@@ -41,11 +43,11 @@ export async function GET(
 
     } catch (error) {
         logger.logServerError(
-            `Failed to get image ${params.filename}`,
+            `Failed to get image ${filename}`,
             error as Error,
             {
                 method: 'GET',
-                url: `/api/images/${params.filename}`,
+                url: `/api/images/${filename}`,
                 userAgent: request.headers.get('user-agent') || 'unknown'
             }
         );
@@ -59,10 +61,11 @@ export async function GET(
 
 export async function PATCH(
     request: NextRequest,
-    { params }: { params: { filename: string } }
+    { params }: { params: Promise<{ filename: string }> }
 ) {
+    const { filename } = await params;
+
     try {
-        const filename = params.filename;
         const body = await request.json();
 
         logger.logApiRequest('PATCH', `/api/images/${filename}`, {
@@ -70,7 +73,7 @@ export async function PATCH(
         });
 
         // Check if image exists
-        const existingImage = await dbImageService.getImage(filename);
+        const existingImage = await imageService.getImage(filename);
         if (!existingImage) {
             return NextResponse.json(
                 { error: 'Image not found' },
@@ -89,13 +92,42 @@ export async function PATCH(
                 );
             }
 
-            const success = await dbImageService.updateImageTags(filename, body.tags);
+            const success = await imageService.updateImageTags(filename, body.tags);
             if (success) updated = true;
         }
 
         // Update description if provided
         if (body.description !== undefined) {
-            const success = await dbImageService.updateImageDescription(filename, body.description);
+            const success = await imageService.updateImageDescription(filename, body.description);
+            if (success) updated = true;
+        }
+
+        // Update date taken and precision if provided
+        if (body.dateTaken !== undefined || body.datePrecision !== undefined) {
+            // Validate dateTaken format if provided
+            if (body.dateTaken !== undefined && body.dateTaken !== null) {
+                try {
+                    new Date(body.dateTaken).toISOString(); // Validate RFC3339 format
+                } catch {
+                    return NextResponse.json(
+                        { error: 'dateTaken must be in RFC3339 format (e.g., 2023-12-25T10:30:00Z)' },
+                        { status: 400 }
+                    );
+                }
+            }
+
+            // Validate datePrecision if provided
+            if (body.datePrecision !== undefined && body.datePrecision !== null) {
+                const validPrecisions = ['hour', 'day', 'month', 'year', 'decade'];
+                if (!validPrecisions.includes(body.datePrecision)) {
+                    return NextResponse.json(
+                        { error: 'datePrecision must be one of: hour, day, month, year, decade' },
+                        { status: 400 }
+                    );
+                }
+            }
+
+            const success = await imageService.updateImageDate(filename, body.dateTaken, body.datePrecision);
             if (success) updated = true;
         }
 
@@ -107,7 +139,7 @@ export async function PATCH(
         }
 
         // Get updated image
-        const updatedImage = await dbImageService.getImage(filename);
+        const updatedImage = await imageService.getImage(filename);
 
         return NextResponse.json({
             success: true,
@@ -116,17 +148,19 @@ export async function PATCH(
                 filename: updatedImage!.filename,
                 tags: updatedImage!.tags || [],
                 description: updatedImage!.description,
+                dateTaken: updatedImage!.dateTaken?.toISOString(),
+                datePrecision: updatedImage!.datePrecision,
                 updatedAt: updatedImage!.updatedAt
             }
         });
 
     } catch (error) {
         logger.logServerError(
-            `Failed to update image ${params.filename}`,
+            `Failed to update image ${filename}`,
             error as Error,
             {
                 method: 'PATCH',
-                url: `/api/images/${params.filename}`,
+                url: `/api/images/${filename}`,
                 userAgent: request.headers.get('user-agent') || 'unknown'
             }
         );

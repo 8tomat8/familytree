@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dbImageService, logger } from '@/lib';
+import { imageService, logger } from '@/lib';
 
 export async function GET(request: NextRequest) {
     try {
@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
         });
 
         // Get images from database
-        const images = await dbImageService.listImages();
+        const images = await imageService.listImages();
 
         const response = NextResponse.json({
             images: images.map(img => ({
@@ -19,6 +19,8 @@ export async function GET(request: NextRequest) {
                 mimeType: img.mimeType,
                 tags: img.tags || [],
                 description: img.description,
+                dateTaken: img.dateTaken?.toISOString(),
+                datePrecision: img.datePrecision,
                 createdAt: img.createdAt,
                 updatedAt: img.updatedAt
             })),
@@ -28,7 +30,7 @@ export async function GET(request: NextRequest) {
         return response;
     } catch (error) {
         return NextResponse.json(
-            { error: 'Failed to read images from database' },
+            { error: 'Failed to read images from database:' + error },
             { status: 500 }
         );
     }
