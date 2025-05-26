@@ -15,9 +15,6 @@ interface ImageMetadataPanelProps {
 export function ImageMetadataPanel({ image, onUpdate }: ImageMetadataPanelProps) {
     const [tags, setTags] = useState<string[]>(image.tags || []);
     const [description, setDescription] = useState(image.description || '');
-    const [dateTaken, setDateTaken] = useState<Date | null>(
-        image.dateTaken ? new Date(image.dateTaken) : null
-    );
     const [isSaving, setIsSaving] = useState(false);
     // Notifications are now handled via appNotifications utility
 
@@ -29,7 +26,6 @@ export function ImageMetadataPanel({ image, onUpdate }: ImageMetadataPanelProps)
                 filename: image.filename,
                 description,
                 tags,
-                dateTaken: dateTaken?.toISOString() || undefined
             });
             appNotifications.metadataSaved();
         } catch (error) {
@@ -40,8 +36,7 @@ export function ImageMetadataPanel({ image, onUpdate }: ImageMetadataPanelProps)
     };
 
     const hasChanges = description !== (image.description || '') ||
-        JSON.stringify(tags) !== JSON.stringify(image.tags || []) ||
-        (dateTaken?.toISOString() || null) !== (image.dateTaken || null);
+        JSON.stringify(tags) !== JSON.stringify(image.tags || [])
 
     return (
         <div className="h-full flex flex-col bg-white dark:bg-gray-800 p-4 overflow-y-auto">
