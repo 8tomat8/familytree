@@ -15,17 +15,53 @@ interface ImageMetadataPanelProps {
 export function ImageMetadataPanel({ image, onUpdate }: ImageMetadataPanelProps) {
     const [tags, setTags] = useState<string[]>(image.tags || []);
     const [description, setDescription] = useState(image.description || '');
+
+    // Parse existing dateTaken into year, month, day
+    const parseExistingDate = () => {
+        if (image.dateTaken) {
+            const date = new Date(image.dateTaken);
+            return {
+                year: date.getFullYear(),
+                month: date.getMonth() + 1, // getMonth() returns 0-11
+                day: date.getDate()
+            };
+        }
+        return { year: 0, month: 0, day: 0 };
+    };
+
+    const [dateValues, setDateValues] = useState(parseExistingDate());
     const [isSaving, setIsSaving] = useState(false);
-    // Notifications are now handled via appNotifications utility
 
     const handleSave = async () => {
         setIsSaving(true);
 
         try {
+            // Construct dateTaken and datePrecision based on provided values
+            let dateTaken: string | undefined;
+            let datePrecision: string | undefined;
+
+            if (dateValues.year > 0) {
+                if (dateValues.month > 0 && dateValues.day > 0) {
+                    // Full date provided
+                    dateTaken = new Date(dateValues.year, dateValues.month - 1, dateValues.day).toISOString();
+                    datePrecision = 'day';
+                } else if (dateValues.month > 0) {
+                    // Year and month provided
+                    dateTaken = new Date(dateValues.year, dateValues.month - 1, 1).toISOString();
+                    datePrecision = 'month';
+                } else {
+                    // Only year provided
+                    dateTaken = new Date(dateValues.year, 0, 1).toISOString();
+                    datePrecision = 'year';
+                }
+            }
+
             await onUpdate({
                 filename: image.filename,
                 description,
                 tags,
+                dateTaken,
+                datePrecision,
             });
             appNotifications.metadataSaved();
         } catch (error) {
@@ -36,7 +72,8 @@ export function ImageMetadataPanel({ image, onUpdate }: ImageMetadataPanelProps)
     };
 
     const hasChanges = description !== (image.description || '') ||
-        JSON.stringify(tags) !== JSON.stringify(image.tags || [])
+        JSON.stringify(tags) !== JSON.stringify(image.tags || []) ||
+        JSON.stringify(dateValues) !== JSON.stringify(parseExistingDate());
 
     return (
         <div className="h-full flex flex-col bg-white dark:bg-gray-800 p-4 overflow-y-auto">
@@ -56,6 +93,54 @@ export function ImageMetadataPanel({ image, onUpdate }: ImageMetadataPanelProps)
                         </button>
                     )}
                 </div>
+            </div>
+
+            {/* Date Taken Section */}
+            <div className="mb-4">
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Date Taken
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                    <div>
+                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Year</label>
+                        <input
+                            type="number"
+                            value={dateValues.year || ''}
+                            onChange={(e) => setDateValues(prev => ({ ...prev, year: parseInt(e.target.value) || 0 }))}
+                            placeholder="YYYY"
+                            min="1800"
+                            max="2100"
+                            className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-gray-200"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Month</label>
+                        <input
+                            type="number"
+                            value={dateValues.month || ''}
+                            onChange={(e) => setDateValues(prev => ({ ...prev, month: parseInt(e.target.value) || 0 }))}
+                            placeholder="MM"
+                            min="0"
+                            max="12"
+                            className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-gray-200"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Day</label>
+                        <input
+                            type="number"
+                            value={dateValues.day || ''}
+                            onChange={(e) => setDateValues(prev => ({ ...prev, day: parseInt(e.target.value) || 0 }))}
+                            placeholder="DD"
+                            min="0"
+                            max="31"
+                            className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-gray-200"
+                        />
+                    </div>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Leave as 0 for unknown values. Precision is determined by the most specific value provided.
+                </p>
             </div>
 
             {/* Tags Section */}
@@ -101,6 +186,12 @@ export function ImageMetadataPanel({ image, onUpdate }: ImageMetadataPanelProps)
                     <div>
                         <span className="font-medium">Updated:</span> {new Date(image.updatedAt).toLocaleDateString()}
                     </div>
+                    {image.dateTaken && (
+                        <div className="col-span-2">
+                            <span className="font-medium">Date Taken:</span> {new Date(image.dateTaken).toLocaleDateString()}
+                            {image.datePrecision && <span className="ml-1 text-gray-400">({image.datePrecision} precision)</span>}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

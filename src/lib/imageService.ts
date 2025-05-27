@@ -267,7 +267,10 @@ export class ImageService {
             return await db.select()
                 .from(images)
                 .where(eq(images.isActive, true))
-                .orderBy(desc(images.createdAt));
+                .orderBy(
+                    desc(images.dateTaken),
+                    desc(images.createdAt),
+                );
         } catch (error) {
             console.error('Error listing images from database:', error);
             return [];
