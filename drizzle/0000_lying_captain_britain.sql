@@ -11,6 +11,8 @@ CREATE TABLE "images" (
 	"is_active" boolean DEFAULT true NOT NULL,
 	"description" text,
 	"tags" text[],
+	"date_taken" timestamp,
+	"date_precision" varchar(20),
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "images_filename_unique" UNIQUE("filename")

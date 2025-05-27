@@ -3,6 +3,7 @@ services:
     image: postgres:17
     env_file:
       - .env
+    user: "999:999"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -52,8 +53,7 @@ services:
     networks:
       - familytree
     depends_on:
-      postgres:
-        condition: service_healthy
+      - postgres
     # Remove external exposure since nginx will handle it
     expose:
       - "3000"

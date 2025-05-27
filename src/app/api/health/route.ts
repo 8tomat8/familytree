@@ -3,10 +3,6 @@ import { logger } from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
     try {
-        logger.logApiRequest('GET', '/api/health', {
-            userAgent: request.headers.get('user-agent') || 'unknown'
-        });
-
         const response = NextResponse.json(
             {
                 status: 'healthy',
@@ -16,7 +12,6 @@ export async function GET(request: NextRequest) {
             { status: 200 }
         );
 
-        logger.logApiResponse('GET', '/api/health', 200);
         return response;
     } catch (error) {
         logger.logServerError(

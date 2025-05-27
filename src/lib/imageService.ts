@@ -241,9 +241,6 @@ export class ImageService {
             const files = await fs.readdir(this.imagesDir);
             const imageFiles = files.filter(file => this.isValidImageFormat(file));
 
-            // Mark all existing images as inactive first
-            await db.update(images).set({ isActive: false });
-
             // Process each image file
             for (const filename of imageFiles) {
                 const result = await this.registerImage(filename);

@@ -68,4 +68,7 @@ images/
 *.svg
 *.ico
 uploads/
-assets/images/ 
+assets/images/
+
+# Database data - will be mounted as volume
+postgres_data/ 
