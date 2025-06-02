@@ -1,9 +1,18 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTh, faTimes, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
-import { useSwipeable } from 'react-swipeable';
+// Swiper imports
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Pagination, Keyboard, A11y, Virtual } from 'swiper/modules';
+import type { Swiper as SwiperType } from 'swiper';
+// Swiper styles
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
+import 'swiper/css/keyboard';
+
 import { ThumbnailCarousel } from './ThumbnailCarousel';
 import { ThumbnailGrid } from './ThumbnailGrid';
 import { ImageDisplay } from './ImageDisplay';
@@ -13,48 +22,25 @@ import { api } from '../lib/api';
 
 export function Gallery() {
     const [images, setImages] = useState<ImageMetadata[]>([]);
-    const [index, setIndex] = useState(0);
+    const [currentIndex, setCurrentIndex] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showGridOverlay, setShowGridOverlay] = useState(false);
     const [showMetadataPanel, setShowMetadataPanel] = useState(false);
     const [imageRefreshKeys, setImageRefreshKeys] = useState<Record<string, number>>({});
 
-    // Navigation functions
-    const goToPrevious = useCallback(() => {
-        if (images.length > 1) {
-            setIndex(prev => prev > 0 ? prev - 1 : images.length - 1);
-        }
-    }, [images.length]);
-
-    const goToNext = useCallback(() => {
-        if (images.length > 1) {
-            setIndex(prev => prev < images.length - 1 ? prev + 1 : 0);
-        }
-    }, [images.length]);
-
-    // Swipe handlers - must be called before any conditional logic
-    const swipeHandlers = useSwipeable({
-        onSwipedLeft: goToNext,
-        onSwipedRight: goToPrevious,
-        trackMouse: true, // Also track mouse drags for desktop
-        preventScrollOnSwipe: true,
-        trackTouch: true,
-        delta: 10, // Minimum distance to trigger swipe
-        swipeDuration: 500, // Maximum time for a swipe gesture
-        touchEventOptions: { passive: false }, // Allow preventDefault
-    });
+    const swiperRef = useRef<SwiperType>(null);
 
     // Handle image rotation refresh
-    const handleImageRotated = (filename: string) => {
+    const handleImageRotated = useCallback((filename: string) => {
         setImageRefreshKeys(prev => ({
             ...prev,
             [filename]: (prev[filename] || 0) + 1
         }));
-    };
+    }, []);
 
     // Handle image metadata update
-    const handleImageUpdate = async (updatedData: Partial<ImageMetadata>) => {
+    const handleImageUpdate = useCallback(async (updatedData: Partial<ImageMetadata>) => {
         if (!updatedData.filename) return;
 
         try {
@@ -75,7 +61,7 @@ export function Gallery() {
             console.error('Error updating image metadata:', error);
             throw error; // Re-throw to let the component handle the error
         }
-    };
+    }, []);
 
     useEffect(() => {
         const fetchImages = async () => {
@@ -95,26 +81,32 @@ export function Gallery() {
     // Arrow key navigation
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
-            if (images.length < 2) return;
-
-            // Don't handle keys when overlay is open
-            if (showGridOverlay) {
-                if (event.key === 'Escape') {
-                    setShowGridOverlay(false);
-                }
-                return;
-            }
-
-            if (event.key === 'ArrowRight') {
-                goToNext();
-            } else if (event.key === 'ArrowLeft') {
-                goToPrevious();
+            // Handle escape key for closing overlay
+            if (showGridOverlay && event.key === 'Escape') {
+                setShowGridOverlay(false);
             }
         };
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [images.length, showGridOverlay, goToNext, goToPrevious]);
+    }, [showGridOverlay]);
+
+    // Optimized slide change handler that only updates state after transition
+    const handleSlideChange = useCallback((swiper: SwiperType) => {
+        // Use requestAnimationFrame to defer state update until after animation
+        requestAnimationFrame(() => {
+            setCurrentIndex(swiper.activeIndex);
+        });
+    }, []);
+
+    // Create virtual slides data for Swiper Virtual module
+    const virtualSlides = useMemo(() => {
+        return images.map((image, index) => ({
+            index,
+            image,
+            refreshKey: imageRefreshKeys[image.filename] || 0
+        }));
+    }, [images, imageRefreshKeys]);
 
     if (loading) {
         return (
@@ -143,14 +135,15 @@ export function Gallery() {
     }
 
     function handleImageSelect(newIndex: number) {
-        setIndex(newIndex);
+        setCurrentIndex(newIndex);
+        swiperRef.current?.slideTo(newIndex);
         // Close overlay when image is selected
         if (showGridOverlay) {
             setShowGridOverlay(false);
         }
     }
 
-    const currentImage = images[index];
+    const currentImage = images[currentIndex];
 
     return (
         <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
@@ -160,7 +153,7 @@ export function Gallery() {
 
                 <div className="flex items-center">
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {index + 1} of {images.length}
+                        {currentIndex + 1} of {images.length}
                     </p>
                 </div>
 
@@ -186,22 +179,49 @@ export function Gallery() {
             </div>
 
             {/* Main content area */}
-            <div className="flex flex-1" {...swipeHandlers}>
-                {/* Image display */}
-                <div className="flex-1 relative">
-                    {currentImage && (
-                        <ImageDisplay
-                            src={currentImage.filename}
-                            onImageRotated={handleImageRotated}
-                        />
-                    )}
+            <div className="flex flex-1">
+                {/* Image display with Swiper */}
+                <div className="flex-1 relative overflow-hidden">
+                    <Swiper
+                        modules={[Navigation, Pagination, Keyboard, A11y, Virtual]}
+                        spaceBetween={0}
+                        slidesPerView={1}
+                        virtual={{
+                            slides: virtualSlides
+                        }}
+                        watchOverflow={true}
+                        keyboard={{
+                            enabled: true,
+                        }}
+                        onSwiper={(swiper) => {
+                            swiperRef.current = swiper;
+                        }}
+                        onSlideChange={handleSlideChange}
+                        className="h-full"
+                        allowTouchMove={true}
+                        grabCursor={true}
+                        followFinger={true}
+                        longSwipesRatio={0.1}
+                        resistance={true}
+                        resistanceRatio={0.85}
+                    >
+                        {images.map((image) => (
+                            <SwiperSlide key={image.filename} className="h-full">
+                                <ImageDisplay
+                                    src={image.filename}
+                                    onImageRotated={handleImageRotated}
+                                    refreshKey={imageRefreshKeys[image.filename] || 0}
+                                />
+                            </SwiperSlide>
+                        ))}
+                    </Swiper>
                 </div>
 
                 {/* ThumbnailCarousel on the right */}
                 <div className={`hidden md:block`}>
                     <ThumbnailCarousel
                         images={images}
-                        currentIndex={index}
+                        currentIndex={currentIndex}
                         onImageSelect={handleImageSelect}
                         imageRefreshKeys={imageRefreshKeys}
                     />
@@ -235,7 +255,7 @@ export function Gallery() {
                         <div className="overflow-auto max-h-[90vh]">
                             <ThumbnailGrid
                                 images={images}
-                                currentIndex={index}
+                                currentIndex={currentIndex}
                                 onImageSelect={handleImageSelect}
                                 imageRefreshKeys={imageRefreshKeys}
                             />
