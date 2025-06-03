@@ -1,4 +1,5 @@
-import { pgTable, uuid, varchar, timestamp, integer, boolean, text } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, timestamp, integer, boolean, text, primaryKey } from 'drizzle-orm/pg-core';
+import { relations } from 'drizzle-orm';
 
 export const images = pgTable('images', {
     id: uuid('id').defaultRandom().primaryKey(),
@@ -20,4 +21,52 @@ export const images = pgTable('images', {
 });
 
 export type Image = typeof images.$inferSelect;
-export type NewImage = typeof images.$inferInsert; 
+export type NewImage = typeof images.$inferInsert;
+
+export const people = pgTable('people', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    name: varchar('name', { length: 255 }).notNull(),
+    birthDate: timestamp('birth_date'),
+    deathDate: timestamp('death_date'),
+    notes: text('notes'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const imagePeople = pgTable('image_people', {
+    imageId: uuid('image_id').notNull().references(() => images.id, { onDelete: 'restrict' }),
+    personId: uuid('person_id').notNull().references(() => people.id, { onDelete: 'restrict' }),
+    // Bounding box coordinates for person selection on image
+    boundingBoxX: integer('bounding_box_x'), // Top-left X coordinate
+    boundingBoxY: integer('bounding_box_y'), // Top-left Y coordinate  
+    boundingBoxWidth: integer('bounding_box_width'), // Width of the rectangle
+    boundingBoxHeight: integer('bounding_box_height'), // Height of the rectangle
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+    primaryKey({ columns: [table.imageId, table.personId] }),
+]);
+
+// Relations for relational queries
+export const imagesRelations = relations(images, ({ many }) => ({
+    imagePeople: many(imagePeople),
+}));
+
+export const peopleRelations = relations(people, ({ many }) => ({
+    imagePeople: many(imagePeople),
+}));
+
+export const imagePeopleRelations = relations(imagePeople, ({ one }) => ({
+    image: one(images, {
+        fields: [imagePeople.imageId],
+        references: [images.id],
+    }),
+    person: one(people, {
+        fields: [imagePeople.personId],
+        references: [people.id],
+    }),
+}));
+
+export type Person = typeof people.$inferSelect;
+export type NewPerson = typeof people.$inferInsert;
+export type ImagePerson = typeof imagePeople.$inferSelect;
+export type NewImagePerson = typeof imagePeople.$inferInsert; 

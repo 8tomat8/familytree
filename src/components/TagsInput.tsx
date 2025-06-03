@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faTimes } from '@fortawesome/free-solid-svg-icons';
 
@@ -11,8 +12,11 @@ interface TagsInputProps {
     className?: string;
 }
 
-export function TagsInput({ tags, onTagsChange, placeholder = "Add new tag", className = "" }: TagsInputProps) {
+export function TagsInput({ tags, onTagsChange, placeholder, className = "" }: TagsInputProps) {
+    const { t } = useTranslation();
     const [newTag, setNewTag] = useState('');
+
+    const defaultPlaceholder = placeholder || t('tags.addNew');
 
     const handleAddTag = () => {
         if (newTag.trim() && !tags.includes(newTag.trim())) {
@@ -57,7 +61,7 @@ export function TagsInput({ tags, onTagsChange, placeholder = "Add new tag", cla
                     value={newTag}
                     onChange={(e) => setNewTag(e.target.value)}
                     onKeyPress={handleKeyPress}
-                    placeholder={placeholder}
+                    placeholder={defaultPlaceholder}
                     className="flex-1 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-gray-200"
                 />
                 <button

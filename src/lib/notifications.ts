@@ -71,6 +71,13 @@ export const appNotifications = {
     metadataSaveError: (error: string) =>
         notifications.error(`Failed to save metadata: ${error}`),
 
+    // Image rotation operations
+    imageRotated: () =>
+        notifications.success('Image rotated successfully'),
+
+    imageRotateError: (error: string) =>
+        notifications.error(`Failed to rotate image: ${error}`),
+
     // Generic operations
     operationSuccess: (operation: string) =>
         notifications.success(`${operation} completed successfully`),

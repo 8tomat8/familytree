@@ -8,7 +8,12 @@ import {
     RotateImageResponse,
     ValidDegrees,
     ImageStatsResponse,
-    HealthCheckResponse
+    HealthCheckResponse,
+    PeopleListResponse,
+    PersonLinkRequest,
+    PersonLinkResponse,
+    PersonUnlinkResponse,
+    ImagePeopleResponse
 } from '@shared/types';
 
 // Images API
@@ -23,8 +28,8 @@ export const imagesApi = {
     },
 
     // Get single image details
-    async getImage(filename: string): Promise<ImageDetailResponse> {
-        const response = await apiClient.get<ImageDetailResponse>(`/api/images/${encodeURIComponent(filename)}`);
+    async getImage(imageId: string): Promise<ImageDetailResponse> {
+        const response = await apiClient.get<ImageDetailResponse>(`/api/images/${encodeURIComponent(imageId)}`);
         if (!response.ok) {
             throw new Error(response.error || 'Failed to fetch image details');
         }
@@ -32,9 +37,9 @@ export const imagesApi = {
     },
 
     // Update image metadata (tags and description)
-    async updateImage(filename: string, updates: ImageUpdateRequest): Promise<ImageUpdateResponse> {
+    async updateImage(imageId: string, updates: ImageUpdateRequest): Promise<ImageUpdateResponse> {
         const response = await apiClient.patch<ImageUpdateResponse>(
-            `/api/images/${encodeURIComponent(filename)}`,
+            `/api/images/${encodeURIComponent(imageId)}`,
             updates
         );
         if (!response.ok) {
@@ -44,10 +49,10 @@ export const imagesApi = {
     },
 
     // Rotate image
-    async rotateImage(filename: string, degrees: ValidDegrees): Promise<RotateImageResponse> {
+    async rotateImage(imageId: string, degrees: ValidDegrees): Promise<RotateImageResponse> {
         const request: RotateImageRequest = { degrees };
         const response = await apiClient.post<RotateImageResponse>(
-            `/api/images/${encodeURIComponent(filename)}/rotate`,
+            `/api/images/${encodeURIComponent(imageId)}/rotate`,
             request
         );
         if (!response.ok) {
@@ -77,8 +82,50 @@ export const healthApi = {
     }
 };
 
+// People API
+export const peopleApi = {
+    // Get all people
+    async getPeople(): Promise<PeopleListResponse> {
+        const response = await apiClient.get<PeopleListResponse>('/api/people');
+        if (!response.ok) {
+            throw new Error(response.error || 'Failed to fetch people');
+        }
+        return response.data!;
+    },
+
+    // Link person to image
+    async linkToImage(request: PersonLinkRequest): Promise<PersonLinkResponse> {
+        const response = await apiClient.post<PersonLinkResponse>('/api/people/link-to-image', request);
+        if (!response.ok) {
+            throw new Error(response.error || 'Failed to link person to image');
+        }
+        return response.data!;
+    },
+
+    // Unlink person from image
+    async unlinkFromImage(personId: string, imageId: string): Promise<PersonUnlinkResponse> {
+        const response = await apiClient.delete<PersonUnlinkResponse>(
+            `/api/people/link-to-image?personId=${personId}&imageId=${imageId}`
+        );
+        if (!response.ok) {
+            throw new Error(response.error || 'Failed to unlink person from image');
+        }
+        return response.data!;
+    },
+
+    // Get people for specific image
+    async getPeopleForImage(imageId: string): Promise<ImagePeopleResponse> {
+        const response = await apiClient.get<ImagePeopleResponse>(`/api/images/${imageId}/people`);
+        if (!response.ok) {
+            throw new Error(response.error || 'Failed to get people for image');
+        }
+        return response.data!;
+    }
+};
+
 // Export all APIs
 export const api = {
     images: imagesApi,
-    health: healthApi
+    health: healthApi,
+    people: peopleApi
 }; 

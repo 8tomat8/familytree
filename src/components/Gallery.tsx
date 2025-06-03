@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTh, faTimes, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
+import { faTh, faTimes, faEdit } from '@fortawesome/free-solid-svg-icons';
 // Swiper imports
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, Keyboard, A11y, Virtual } from 'swiper/modules';
@@ -15,9 +15,10 @@ import 'swiper/css/keyboard';
 
 import { ThumbnailCarousel } from './ThumbnailCarousel';
 import { ThumbnailGrid } from './ThumbnailGrid';
-import { ImageDisplay } from './ImageDisplay';
+import { ImageWithPeople } from './ImageWithPeople';
 import { ImageMetadata } from '@shared/types';
 import { ImageMetadataPanel } from './ImageMetadataPanel';
+import { TopBar } from './TopBar';
 import { api } from '../lib/api';
 
 export function Gallery() {
@@ -41,10 +42,10 @@ export function Gallery() {
 
     // Handle image metadata update
     const handleImageUpdate = useCallback(async (updatedData: Partial<ImageMetadata>) => {
-        if (!updatedData.filename) return;
+        if (!updatedData.id) return;
 
         try {
-            const result = await api.images.updateImage(updatedData.filename, {
+            const result = await api.images.updateImage(updatedData.id, {
                 tags: updatedData.tags,
                 description: updatedData.description,
                 dateTaken: updatedData.dateTaken,
@@ -53,7 +54,7 @@ export function Gallery() {
 
             // Update local state with the updated image data
             setImages(prev => prev.map(img =>
-                img.filename === updatedData.filename
+                img.id === updatedData.id
                     ? { ...img, ...updatedData, updatedAt: result.image.updatedAt }
                     : img
             ));
@@ -147,36 +148,30 @@ export function Gallery() {
 
     return (
         <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
-            {/* Header with navigation and grid toggle */}
-            <div className="flex items-center justify-between p-1 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-20">
-                <div className="flex-1"></div>
-
-                <div className="flex items-center">
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {currentIndex + 1} of {images.length}
-                    </p>
-                </div>
-
-                <div className="flex-1 flex justify-end gap-2">
-                    <button
-                        onClick={() => setShowMetadataPanel(!showMetadataPanel)}
-                        className={`p-2 transition-colors ${showMetadataPanel
-                            ? 'text-blue-600 dark:text-blue-400'
-                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
-                            }`}
-                        title="Toggle image metadata"
-                    >
-                        <FontAwesomeIcon icon={faInfoCircle} className="w-5 h-5" />
-                    </button>
-                    <button
-                        onClick={() => setShowGridOverlay(true)}
-                        className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
-                        title="Show grid view"
-                    >
-                        <FontAwesomeIcon icon={faTh} className="w-5 h-5" />
-                    </button>
-                </div>
-            </div>
+            <TopBar
+                centerText={`${currentIndex + 1} of ${images.length}`}
+                rightActions={
+                    <>
+                        <button
+                            onClick={() => setShowMetadataPanel(!showMetadataPanel)}
+                            className={`p-2 transition-colors ${showMetadataPanel
+                                ? 'text-blue-600 dark:text-blue-400'
+                                : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                                }`}
+                            title="Toggle image metadata"
+                        >
+                            <FontAwesomeIcon icon={faEdit} className="w-5 h-5" />
+                        </button>
+                        <button
+                            onClick={() => setShowGridOverlay(true)}
+                            className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+                            title="Show grid view"
+                        >
+                            <FontAwesomeIcon icon={faTh} className="w-5 h-5" />
+                        </button>
+                    </>
+                }
+            />
 
             {/* Main content area */}
             <div className="flex flex-1">
@@ -207,9 +202,9 @@ export function Gallery() {
                     >
                         {images.map((image) => (
                             <SwiperSlide key={image.filename} className="h-full">
-                                <ImageDisplay
+                                <ImageWithPeople
                                     src={image.filename}
-                                    onImageRotated={handleImageRotated}
+                                    imageId={image.id}
                                     refreshKey={imageRefreshKeys[image.filename] || 0}
                                 />
                             </SwiperSlide>
@@ -229,12 +224,13 @@ export function Gallery() {
             </div>
 
             {/* Image Metadata Panel - Sliding from right */}
-            <div className={`fixed top-12 right-0 h-[calc(100vh-3rem)] w-80 bg-white dark:bg-gray-800 shadow-xl transform transition-transform duration-300 ease-in-out z-30 ${showMetadataPanel ? 'translate-x-0' : 'translate-x-full'
+            <div className={`fixed top-12 right-0 h-[calc(100vh-3rem)] w-96 bg-white dark:bg-gray-800 shadow-xl transform transition-transform duration-300 ease-in-out z-30 ${showMetadataPanel ? 'translate-x-0' : 'translate-x-full'
                 }`}>
                 {currentImage && (
                     <ImageMetadataPanel
                         image={currentImage}
                         onUpdate={handleImageUpdate}
+                        onImageRotated={handleImageRotated}
                     />
                 )}
             </div>

@@ -5,10 +5,10 @@ import { imageService, logger } from '@/lib';
 
 export async function POST(
     request: NextRequest,
-    { params }: { params: Promise<{ filename: string }> }
+    { params }: { params: Promise<{ imageId: string }> }
 ) {
-    const { filename } = await params;
-    const apiPath = `/api/images/${filename}/rotate`;
+    const { imageId } = await params;
+    const apiPath = `/api/images/${imageId}/rotate`;
 
     try {
         logger.logApiRequest('POST', apiPath, {
@@ -28,13 +28,27 @@ export async function POST(
             );
         }
 
+        // Get image from database
+        const image = await imageService.getImageById(imageId);
+        if (!image) {
+            logger.logApiResponse('POST', apiPath, 404, {
+                userAgent: request.headers.get('user-agent') || 'unknown'
+            });
+            return NextResponse.json(
+                { error: 'Image not found' },
+                { status: 404 }
+            );
+        }
+
+        const filename = image.filename;
+
         // Check if file exists and is valid format
         if (!await imageService.imageExists(filename)) {
             logger.logApiResponse('POST', apiPath, 404, {
                 userAgent: request.headers.get('user-agent') || 'unknown'
             });
             return NextResponse.json(
-                { error: 'Image not found' },
+                { error: 'Image file not found' },
                 { status: 404 }
             );
         }
@@ -68,12 +82,12 @@ export async function POST(
         return NextResponse.json({
             success: true,
             message: `Image rotated ${degrees} degrees`,
-            filename
+            filename: image.filename
         });
 
     } catch (error) {
         logger.logServerError(
-            `Failed to rotate image: ${filename}`,
+            `Failed to rotate image: ${imageId}`,
             error as Error,
             {
                 method: 'POST',

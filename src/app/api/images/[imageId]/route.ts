@@ -3,16 +3,16 @@ import { imageService, logger } from '@/lib';
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: Promise<{ filename: string }> }
+    { params }: { params: Promise<{ imageId: string }> }
 ) {
-    const { filename } = await params;
+    const { imageId } = await params;
 
     try {
-        logger.logApiRequest('GET', `/api/images/${filename}`, {
+        logger.logApiRequest('GET', `/api/images/${imageId}`, {
             userAgent: request.headers.get('user-agent') || 'unknown'
         });
 
-        const image = await imageService.getImage(filename);
+        const image = await imageService.getImageById(imageId);
 
         if (!image) {
             return NextResponse.json(
@@ -24,6 +24,7 @@ export async function GET(
         return NextResponse.json({
             success: true,
             image: {
+                id: image.id,
                 filename: image.filename,
                 originalName: image.originalName,
                 size: image.size,
@@ -43,11 +44,11 @@ export async function GET(
 
     } catch (error) {
         logger.logServerError(
-            `Failed to get image ${filename}`,
+            `Failed to get image ${imageId}`,
             error as Error,
             {
                 method: 'GET',
-                url: `/api/images/${filename}`,
+                url: `/api/images/${imageId}`,
                 userAgent: request.headers.get('user-agent') || 'unknown'
             }
         );
@@ -61,19 +62,19 @@ export async function GET(
 
 export async function PATCH(
     request: NextRequest,
-    { params }: { params: Promise<{ filename: string }> }
+    { params }: { params: Promise<{ imageId: string }> }
 ) {
-    const { filename } = await params;
+    const { imageId } = await params;
 
     try {
         const body = await request.json();
 
-        logger.logApiRequest('PATCH', `/api/images/${filename}`, {
+        logger.logApiRequest('PATCH', `/api/images/${imageId}`, {
             userAgent: request.headers.get('user-agent') || 'unknown'
         });
 
         // Check if image exists
-        const existingImage = await imageService.getImage(filename);
+        const existingImage = await imageService.getImageById(imageId);
         if (!existingImage) {
             return NextResponse.json(
                 { error: 'Image not found' },
@@ -92,13 +93,13 @@ export async function PATCH(
                 );
             }
 
-            const success = await imageService.updateImageTags(filename, body.tags);
+            const success = await imageService.updateImageTagsById(imageId, body.tags);
             if (success) updated = true;
         }
 
         // Update description if provided
         if (body.description !== undefined) {
-            const success = await imageService.updateImageDescription(filename, body.description);
+            const success = await imageService.updateImageDescriptionById(imageId, body.description);
             if (success) updated = true;
         }
 
@@ -127,7 +128,7 @@ export async function PATCH(
                 }
             }
 
-            const success = await imageService.updateImageDate(filename, body.dateTaken, body.datePrecision);
+            const success = await imageService.updateImageDateById(imageId, body.dateTaken, body.datePrecision);
             if (success) updated = true;
         }
 
@@ -139,12 +140,13 @@ export async function PATCH(
         }
 
         // Get updated image
-        const updatedImage = await imageService.getImage(filename);
+        const updatedImage = await imageService.getImageById(imageId);
 
         return NextResponse.json({
             success: true,
             message: 'Image updated successfully',
             image: {
+                id: updatedImage!.id,
                 filename: updatedImage!.filename,
                 tags: updatedImage!.tags || [],
                 description: updatedImage!.description,
@@ -156,11 +158,11 @@ export async function PATCH(
 
     } catch (error) {
         logger.logServerError(
-            `Failed to update image ${filename}`,
+            `Failed to update image ${imageId}`,
             error as Error,
             {
                 method: 'PATCH',
-                url: `/api/images/${filename}`,
+                url: `/api/images/${imageId}`,
                 userAgent: request.headers.get('user-agent') || 'unknown'
             }
         );

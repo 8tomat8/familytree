@@ -1,5 +1,6 @@
 // Base image metadata interface
 export interface ImageMetadata {
+    id: string;
     filename: string;
     size: number;
     width?: number;
@@ -11,6 +12,25 @@ export interface ImageMetadata {
     datePrecision?: string; // 'hour', 'day', 'month', 'year', 'decade'
     createdAt: string;
     updatedAt: string;
+}
+
+// Person interface
+export interface Person {
+    id: string;
+    name: string;
+    birthDate?: string;
+    deathDate?: string;
+    notes?: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+// Bounding box for person selection on image
+export interface BoundingBox {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
 }
 
 // Sync operation result
@@ -96,4 +116,38 @@ export interface ErrorResponse {
 
 // Image file extensions
 export const SUPPORTED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'] as const;
-export type SupportedImageExtension = typeof SUPPORTED_IMAGE_EXTENSIONS[number]; 
+export type SupportedImageExtension = typeof SUPPORTED_IMAGE_EXTENSIONS[number];
+
+// People API types
+export interface PeopleListResponse {
+    people: Person[];
+    count: number;
+}
+
+export interface PersonLinkRequest {
+    personId: string;
+    imageId: string;
+    boundingBox?: BoundingBox;
+}
+
+export interface PersonLinkResponse {
+    success: boolean;
+    message: string;
+}
+
+export interface PersonUnlinkResponse {
+    success: boolean;
+    message: string;
+}
+
+export interface ImagePeopleResponse {
+    people: Array<{
+        id: string;
+        name: string;
+        birthDate?: string;
+        deathDate?: string;
+        notes?: string;
+        boundingBox?: BoundingBox;
+    }>;
+    count: number;
+} 

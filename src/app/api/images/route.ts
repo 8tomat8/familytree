@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
 
         const response = NextResponse.json({
             images: images.map(img => ({
+                id: img.id,
                 filename: img.filename,
                 size: img.size,
                 width: img.width,

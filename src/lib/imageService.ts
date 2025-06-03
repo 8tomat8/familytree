@@ -3,7 +3,7 @@ import path from 'path';
 import { createHash } from 'crypto';
 import sharp from 'sharp';
 import { db, images, Image, NewImage } from '@/lib/db';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, count, sum } from 'drizzle-orm';
 import { SupportedImageExtension, SUPPORTED_IMAGE_EXTENSIONS } from '@shared/types';
 
 export class ImageService {
@@ -295,6 +295,23 @@ export class ImageService {
     }
 
     /**
+     * Get image by ID from database
+     */
+    async getImageById(id: string): Promise<Image | null> {
+        try {
+            const result = await db.select()
+                .from(images)
+                .where(eq(images.id, id))
+                .limit(1);
+
+            return result[0] || null;
+        } catch (error) {
+            console.error(`Error getting image by ID ${id}:`, error);
+            return null;
+        }
+    }
+
+    /**
      * Update image tags
      */
     async updateImageTags(filename: string, tags: string[]): Promise<boolean> {
@@ -361,6 +378,34 @@ export class ImageService {
     }
 
     /**
+     * Update image date taken and precision by ID
+     */
+    async updateImageDateById(id: string, dateTaken: string | null, datePrecision: string | null): Promise<boolean> {
+        try {
+            const updateData: Partial<typeof images.$inferInsert> = {
+                updatedAt: new Date()
+            };
+
+            if (dateTaken !== undefined) {
+                updateData.dateTaken = dateTaken ? new Date(dateTaken) : null;
+            }
+
+            if (datePrecision !== undefined) {
+                updateData.datePrecision = datePrecision;
+            }
+
+            await db.update(images)
+                .set(updateData)
+                .where(eq(images.id, id));
+
+            return true;
+        } catch (error) {
+            console.error(`Error updating date for image ID ${id}:`, error);
+            return false;
+        }
+    }
+
+    /**
      * Get database statistics
      */
     async getStats(): Promise<{
@@ -369,18 +414,58 @@ export class ImageService {
         totalSize: number;
     }> {
         try {
-            const allImages = await db.select().from(images);
-            const activeImages = allImages.filter(img => img.isActive);
-            const totalSize = activeImages.reduce((sum, img) => sum + (img.size || 0), 0);
+            const allImages = await db.select({
+                totalImages: count(),
+                activeImages: count(images.isActive),
+                totalSize: sum(images.size),
+            }).from(images);
 
             return {
-                totalImages: allImages.length,
-                activeImages: activeImages.length,
-                totalSize
+                totalImages: allImages[0].totalImages,
+                activeImages: allImages[0].activeImages,
+                totalSize: Number(allImages[0].totalSize) || 0,
             };
         } catch (error) {
             console.error('Error getting database stats:', error);
             return { totalImages: 0, activeImages: 0, totalSize: 0 };
+        }
+    }
+
+    /**
+     * Update image tags by ID
+     */
+    async updateImageTagsById(id: string, tags: string[]): Promise<boolean> {
+        try {
+            await db.update(images)
+                .set({
+                    tags: tags,
+                    updatedAt: new Date()
+                })
+                .where(eq(images.id, id));
+
+            return true;
+        } catch (error) {
+            console.error(`Error updating tags for image ID ${id}:`, error);
+            return false;
+        }
+    }
+
+    /**
+     * Update image description by ID
+     */
+    async updateImageDescriptionById(id: string, description: string): Promise<boolean> {
+        try {
+            await db.update(images)
+                .set({
+                    description,
+                    updatedAt: new Date()
+                })
+                .where(eq(images.id, id));
+
+            return true;
+        } catch (error) {
+            console.error(`Error updating description for image ID ${id}:`, error);
+            return false;
         }
     }
 

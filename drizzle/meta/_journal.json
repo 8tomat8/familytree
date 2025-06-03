@@ -8,6 +8,20 @@
       "when": 1748294416389,
       "tag": "0000_lying_captain_britain",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1748983631839,
+      "tag": "0001_unique_talos",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1748984463149,
+      "tag": "0002_grey_tyger_tiger",
+      "breakpoints": true
     }
   ]
 }

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface DateValues {
     year: number;
@@ -14,33 +15,35 @@ interface DatePickerProps {
     onChange: (dateTaken?: string, datePrecision?: string) => void;
 }
 
-export function DatePicker({ dateTaken, datePrecision, onChange }: DatePickerProps) {
+export function DatePicker({ dateTaken, onChange }: DatePickerProps) {
+    const { t } = useTranslation();
+
     // Parse existing dateTaken into year, month, day based on precision
-    const parseExistingDate = useCallback((): DateValues => {
-        if (dateTaken) {
-            const date = new Date(dateTaken);
-            const year = date.getFullYear();
+    const [dateValues, setDateValues] = useState<DateValues>(() => {
+        if (!dateTaken) return { year: 0, month: 0, day: 0 };
 
-            if (datePrecision === 'year') {
-                return { year, month: 0, day: 0 };
-            } else if (datePrecision === 'month') {
-                return { year, month: date.getMonth() + 1, day: 0 };
-            } else if (datePrecision === 'day') {
-                return { year, month: date.getMonth() + 1, day: date.getDate() };
-            } else {
-                // No precision specified, assume full date for backward compatibility
-                return { year, month: date.getMonth() + 1, day: date.getDate() };
-            }
-        }
-        return { year: 0, month: 0, day: 0 };
-    }, [dateTaken, datePrecision]);
-
-    const [dateValues, setDateValues] = useState<DateValues>(parseExistingDate());
+        const date = new Date(dateTaken);
+        return {
+            year: date.getFullYear(),
+            month: date.getMonth() + 1, // JavaScript months are 0-indexed
+            day: date.getDate(),
+        };
+    });
 
     // Update state when props change
     useEffect(() => {
-        setDateValues(parseExistingDate());
-    }, [dateTaken, datePrecision, parseExistingDate]);
+        if (!dateTaken) {
+            setDateValues({ year: 0, month: 0, day: 0 });
+            return;
+        }
+
+        const date = new Date(dateTaken);
+        setDateValues({
+            year: date.getFullYear(),
+            month: date.getMonth() + 1,
+            day: date.getDate(),
+        });
+    }, [dateTaken]);
 
     // Handle date changes and notify parent
     const handleDateChange = (newDateValues: DateValues) => {
@@ -69,15 +72,39 @@ export function DatePicker({ dateTaken, datePrecision, onChange }: DatePickerPro
         onChange(newDateTaken, newDatePrecision);
     };
 
+    // Generate days for the selected month
+    const daysInMonth = dateValues.month > 0 ? new Date(dateValues.year || new Date().getFullYear(), dateValues.month, 0).getDate() : 31;
+
+    // Month options with translations
+    const monthOptions = [
+        { value: '', label: '' },
+        { value: '1', label: t('date.months.january') },
+        { value: '2', label: t('date.months.february') },
+        { value: '3', label: t('date.months.march') },
+        { value: '4', label: t('date.months.april') },
+        { value: '5', label: t('date.months.may') },
+        { value: '6', label: t('date.months.june') },
+        { value: '7', label: t('date.months.july') },
+        { value: '8', label: t('date.months.august') },
+        { value: '9', label: t('date.months.september') },
+        { value: '10', label: t('date.months.october') },
+        { value: '11', label: t('date.months.november') },
+        { value: '12', label: t('date.months.december') },
+    ];
+
     return (
         <div>
             <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Date Taken
+                {t('metadata.dateTaken')}
             </label>
             <div className="grid grid-cols-3 gap-2">
                 <div>
-                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Year</label>
-                    <select
+                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{t('date.year')}</label>
+                    <input
+                        type="number"
+                        placeholder="YYYY"
+                        min="1900"
+                        max={new Date().getFullYear()}
                         value={dateValues.year || ''}
                         onChange={(e) => {
                             const year = parseInt(e.target.value) || 0;
@@ -89,15 +116,11 @@ export function DatePicker({ dateTaken, datePrecision, onChange }: DatePickerPro
                             }
                         }}
                         className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-gray-200"
-                    >
-                        <option value=""></option>
-                        {Array.from({ length: new Date().getFullYear() - 1880 + 1 }, (_, i) => new Date().getFullYear() - i).map(year => (
-                            <option key={year} value={year}>{year}</option>
-                        ))}
-                    </select>
+                    />
                 </div>
+
                 <div>
-                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Month</label>
+                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{t('date.month')}</label>
                     <select
                         value={dateValues.month || ''}
                         onChange={(e) => {
@@ -111,31 +134,30 @@ export function DatePicker({ dateTaken, datePrecision, onChange }: DatePickerPro
                         }}
                         className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-gray-200"
                     >
-                        <option value=""></option>
-                        <option value="1">January</option>
-                        <option value="2">February</option>
-                        <option value="3">March</option>
-                        <option value="4">April</option>
-                        <option value="5">May</option>
-                        <option value="6">June</option>
-                        <option value="7">July</option>
-                        <option value="8">August</option>
-                        <option value="9">September</option>
-                        <option value="10">October</option>
-                        <option value="11">November</option>
-                        <option value="12">December</option>
+                        {monthOptions.map(option => (
+                            <option key={option.value} value={option.value}>
+                                {option.label}
+                            </option>
+                        ))}
                     </select>
                 </div>
+
                 <div>
-                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Day</label>
+                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{t('date.day')}</label>
                     <select
                         value={dateValues.day || ''}
-                        onChange={(e) => handleDateChange({ ...dateValues, day: parseInt(e.target.value) || 0 })}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-gray-200"
+                        onChange={(e) => {
+                            const day = parseInt(e.target.value) || 0;
+                            handleDateChange({ ...dateValues, day });
+                        }}
+                        disabled={!dateValues.month}
+                        className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-gray-200 disabled:opacity-50"
                     >
                         <option value=""></option>
-                        {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
-                            <option key={day} value={day}>{day}</option>
+                        {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => (
+                            <option key={day} value={day}>
+                                {day}
+                            </option>
                         ))}
                     </select>
                 </div>
