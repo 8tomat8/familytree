@@ -3,14 +3,16 @@ import { peopleService, logger } from '@/lib';
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { imageId: string } }
+    { params }: { params: Promise<{ imageId: string }> }
 ) {
     try {
-        logger.logApiRequest('GET', `/api/images/${params.imageId}/people`, {
+        const { imageId } = await params;
+
+        logger.logApiRequest('GET', `/api/images/${imageId}/people`, {
             userAgent: request.headers.get('user-agent') || 'unknown'
         });
 
-        const result = await peopleService.getPeopleForImage(params.imageId);
+        const result = await peopleService.getPeopleForImage(imageId);
 
         return NextResponse.json({
             people: result.map(item => ({

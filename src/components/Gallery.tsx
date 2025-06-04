@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTh, faTimes, faEdit } from '@fortawesome/free-solid-svg-icons';
+import { faTh, faTimes, faEdit, faCrop } from '@fortawesome/free-solid-svg-icons';
 // Swiper imports
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, Keyboard, A11y, Virtual } from 'swiper/modules';
@@ -15,11 +15,11 @@ import 'swiper/css/keyboard';
 
 import { ThumbnailCarousel } from './ThumbnailCarousel';
 import { ThumbnailGrid } from './ThumbnailGrid';
-import { ImageWithPeople } from './ImageWithPeople';
 import { ImageMetadata } from '@shared/types';
 import { ImageMetadataPanel } from './ImageMetadataPanel';
 import { TopBar } from './TopBar';
 import { api } from '../lib/api';
+import { ImageDisplay } from './ImageDisplay';
 
 export function Gallery() {
     const [images, setImages] = useState<ImageMetadata[]>([]);
@@ -28,9 +28,12 @@ export function Gallery() {
     const [error, setError] = useState<string | null>(null);
     const [showGridOverlay, setShowGridOverlay] = useState(false);
     const [showMetadataPanel, setShowMetadataPanel] = useState(false);
+    const [isCropping, setIsCropping] = useState(false);
     const [imageRefreshKeys, setImageRefreshKeys] = useState<Record<string, number>>({});
-
-    const swiperRef = useRef<SwiperType>(null);
+    // Person selection state
+    const [isSelectingPerson, setIsSelectingPerson] = useState(false);
+    const [canConfirmPersonSelection, setCanConfirmPersonSelection] = useState(false);
+    const swiperRef = useRef<SwiperType | null>(null);
 
     // Handle image rotation refresh
     const handleImageRotated = useCallback((filename: string) => {
@@ -63,6 +66,21 @@ export function Gallery() {
             throw error; // Re-throw to let the component handle the error
         }
     }, []);
+
+    // Person selection handlers
+    const handleStartPersonSelection = () => {
+        setIsSelectingPerson(true);
+        setCanConfirmPersonSelection(false);
+    };
+
+    const handleCancelPersonSelection = () => {
+        setIsSelectingPerson(false);
+        setCanConfirmPersonSelection(false);
+    };
+
+    const handleConfirmPersonSelection = () => {
+        setCanConfirmPersonSelection(true);
+    };
 
     useEffect(() => {
         const fetchImages = async () => {
@@ -153,6 +171,16 @@ export function Gallery() {
                 rightActions={
                     <>
                         <button
+                            onClick={() => setIsCropping(!isCropping)}
+                            className={`p-2 transition-colors ${isCropping
+                                ? 'text-blue-600 dark:text-blue-400'
+                                : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                                }`}
+                            title="Toggle image cropping"
+                        >
+                            <FontAwesomeIcon icon={faCrop} className="w-5 h-5" />
+                        </button>
+                        <button
                             onClick={() => setShowMetadataPanel(!showMetadataPanel)}
                             className={`p-2 transition-colors ${showMetadataPanel
                                 ? 'text-blue-600 dark:text-blue-400'
@@ -193,19 +221,21 @@ export function Gallery() {
                         }}
                         onSlideChange={handleSlideChange}
                         className="h-full"
-                        allowTouchMove={true}
-                        grabCursor={true}
-                        followFinger={true}
+                        allowTouchMove={!isCropping}
+                        grabCursor={!isCropping}
+                        followFinger={!isCropping}
+                        allowSlideNext={!isCropping}
+                        allowSlidePrev={!isCropping}
                         longSwipesRatio={0.1}
                         resistance={true}
                         resistanceRatio={0.85}
                     >
                         {images.map((image) => (
                             <SwiperSlide key={image.filename} className="h-full">
-                                <ImageWithPeople
+                                <ImageDisplay
                                     src={image.filename}
-                                    imageId={image.id}
                                     refreshKey={imageRefreshKeys[image.filename] || 0}
+                                    isCropping={isCropping}
                                 />
                             </SwiperSlide>
                         ))}
