@@ -1,4 +1,4 @@
-import { db, people, Person, imagePeople, NewImagePerson, images } from '@/lib/db';
+import { db, people, Person, imagePeople, NewImagePerson, images, NewPerson } from '@/lib/db';
 import { count, desc, eq, and } from 'drizzle-orm';
 
 export class PeopleService {
@@ -15,6 +15,41 @@ export class PeopleService {
         } catch (error) {
             console.error('Error fetching people from database:', error);
             throw new Error('Failed to fetch people from database');
+        }
+    }
+
+    /**
+     * Create a new person in the database
+     */
+    async createPerson(personData: {
+        name: string;
+        birthDate?: Date;
+        deathDate?: Date;
+        notes?: string;
+    }): Promise<Person> {
+        try {
+            // Validate required fields
+            if (!personData.name || personData.name.trim() === '') {
+                throw new Error('Name is required');
+            }
+
+            const newPerson: NewPerson = {
+                name: personData.name.trim(),
+                birthDate: personData.birthDate || null,
+                deathDate: personData.deathDate || null,
+                notes: personData.notes || null,
+            };
+
+            const result = await db.insert(people).values(newPerson).returning();
+
+            if (result.length === 0) {
+                throw new Error('Failed to create person');
+            }
+
+            return result[0];
+        } catch (error) {
+            console.error('Error creating person:', error);
+            throw error;
         }
     }
 

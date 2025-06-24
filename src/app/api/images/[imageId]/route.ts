@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { imageService, logger } from '@/lib';
 
 export async function GET(
@@ -6,6 +7,12 @@ export async function GET(
     { params }: { params: Promise<{ imageId: string }> }
 ) {
     const { imageId } = await params;
+
+    // Validate imageId parameter
+    const idValidation = z.string().uuid();
+    if (!idValidation.safeParse(imageId).success) {
+        return NextResponse.json({ error: 'Invalid imageId parameter. Must be a UUID.' }, { status: 400 });
+    }
 
     try {
         logger.logApiRequest('GET', `/api/images/${imageId}`, {
@@ -69,6 +76,26 @@ export async function PATCH(
     try {
         const body = await request.json();
 
+        // Validate imageId parameter first
+        const idValidation = z.string().uuid();
+        if (!idValidation.safeParse(imageId).success) {
+            return NextResponse.json({ error: 'Invalid imageId parameter. Must be a UUID.' }, { status: 400 });
+        }
+
+        // Validate request body using Zod
+        const UpdateSchema = z.object({
+            tags: z.array(z.string()).optional(),
+            description: z.string().optional(),
+            dateTaken: z.string().datetime({ offset: true }).optional().nullable(),
+            datePrecision: z.enum(['hour','day','month','year','decade']).optional()
+        }).strict();
+
+        const parsed = UpdateSchema.safeParse(body);
+        if (!parsed.success) {
+            return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+        }
+        const validBody = parsed.data;
+
         logger.logApiRequest('PATCH', `/api/images/${imageId}`, {
             userAgent: request.headers.get('user-agent') || 'unknown'
         });
@@ -85,7 +112,7 @@ export async function PATCH(
         let updated = false;
 
         // Update tags if provided
-        if (body.tags !== undefined) {
+        if (validBody.tags !== undefined) {
             if (!Array.isArray(body.tags)) {
                 return NextResponse.json(
                     { error: 'Tags must be an array of strings' },
@@ -93,20 +120,20 @@ export async function PATCH(
                 );
             }
 
-            const success = await imageService.updateImageTagsById(imageId, body.tags);
+            const success = await imageService.updateImageTagsById(imageId, validBody.tags);
             if (success) updated = true;
         }
 
         // Update description if provided
-        if (body.description !== undefined) {
-            const success = await imageService.updateImageDescriptionById(imageId, body.description);
+        if (validBody.description !== undefined) {
+            const success = await imageService.updateImageDescriptionById(imageId, validBody.description);
             if (success) updated = true;
         }
 
         // Update date taken and precision if provided
-        if (body.dateTaken !== undefined || body.datePrecision !== undefined) {
+        if (validBody.dateTaken !== undefined || validBody.datePrecision !== undefined) {
             // Validate dateTaken format if provided
-            if (body.dateTaken !== undefined && body.dateTaken !== null) {
+            if (validBody.dateTaken !== undefined && validBody.dateTaken !== null) {
                 try {
                     new Date(body.dateTaken).toISOString(); // Validate RFC3339 format
                 } catch {
@@ -118,7 +145,7 @@ export async function PATCH(
             }
 
             // Validate datePrecision if provided
-            if (body.datePrecision !== undefined && body.datePrecision !== null) {
+            if (validBody.datePrecision !== undefined && validBody.datePrecision !== null) {
                 const validPrecisions = ['hour', 'day', 'month', 'year', 'decade'];
                 if (!validPrecisions.includes(body.datePrecision)) {
                     return NextResponse.json(
@@ -128,7 +155,7 @@ export async function PATCH(
                 }
             }
 
-            const success = await imageService.updateImageDateById(imageId, body.dateTaken, body.datePrecision);
+            const success = await imageService.updateImageDateById(imageId, validBody.dateTaken!, validBody.datePrecision);
             if (success) updated = true;
         }
 

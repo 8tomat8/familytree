@@ -10,13 +10,15 @@ interface ThumbnailCarouselProps {
     currentIndex: number;
     onImageSelect: (index: number) => void;
     imageRefreshKeys?: Record<string, number>;
+    disabled?: boolean;
 }
 
 export function ThumbnailCarousel({
     images,
     currentIndex,
     onImageSelect,
-    imageRefreshKeys = {}
+    imageRefreshKeys = {},
+    disabled = false
 }: ThumbnailCarouselProps) {
     const listRef = useRef<List>(null);
     const [listHeight, setListHeight] = useState(600); // Default height
@@ -43,8 +45,9 @@ export function ThumbnailCarousel({
     const itemData = {
         images,
         currentIndex,
-        onImageSelect,
+        onImageSelect: disabled ? () => {} : onImageSelect,
         imageRefreshKeys,
+        disabled,
     };
 
     return (

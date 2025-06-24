@@ -29,6 +29,18 @@ export function Gallery() {
     const [showGridOverlay, setShowGridOverlay] = useState(false);
     const [showMetadataPanel, setShowMetadataPanel] = useState(false);
     const [isCropping, setIsCropping] = useState(false);
+    
+    // Handle ESC key to exit cropping mode
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape' && isCropping) {
+                setIsCropping(false);
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [isCropping]);
     const [imageRefreshKeys, setImageRefreshKeys] = useState<Record<string, number>>({});
     // Person selection state
     const [isSelectingPerson, setIsSelectingPerson] = useState(false);
@@ -234,6 +246,7 @@ export function Gallery() {
                             <SwiperSlide key={image.filename} className="h-full">
                                 <ImageDisplay
                                     src={image.filename}
+                                    imageId={image.id}
                                     refreshKey={imageRefreshKeys[image.filename] || 0}
                                     isCropping={isCropping}
                                 />
@@ -249,6 +262,7 @@ export function Gallery() {
                         currentIndex={currentIndex}
                         onImageSelect={handleImageSelect}
                         imageRefreshKeys={imageRefreshKeys}
+                        disabled={isCropping}
                     />
                 </div>
             </div>

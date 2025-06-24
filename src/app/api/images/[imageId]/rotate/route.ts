@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import sharp from 'sharp';
 import { RotateImageRequest, VALID_DEGREES } from '@shared/types';
 import { imageService, logger } from '@/lib';
@@ -8,6 +9,12 @@ export async function POST(
     { params }: { params: Promise<{ imageId: string }> }
 ) {
     const { imageId } = await params;
+
+    // Validate imageId parameter
+    const idValidation = z.string().uuid();
+    if (!idValidation.safeParse(imageId).success) {
+        return NextResponse.json({ error: 'Invalid imageId parameter. Must be a UUID.' }, { status: 400 });
+    }
     const apiPath = `/api/images/${imageId}/rotate`;
 
     try {
@@ -15,7 +22,14 @@ export async function POST(
             userAgent: request.headers.get('user-agent') || 'unknown'
         });
 
-        const { degrees }: RotateImageRequest = await request.json();
+        const body = await request.json();
+        // Validate request body
+        const RotateSchema = z.object({ degrees: z.union([z.literal(90), z.literal(180), z.literal(270)]) });
+        const parseBody = RotateSchema.safeParse(body);
+        if (!parseBody.success) {
+            return NextResponse.json({ error: 'Invalid request body: degrees must be 90, 180, or 270' }, { status: 400 });
+        }
+        const { degrees }: RotateImageRequest = parseBody.data;
 
         // Validate rotation degrees
         if (!VALID_DEGREES.includes(degrees)) {

@@ -10,6 +10,8 @@ import {
     ImageStatsResponse,
     HealthCheckResponse,
     PeopleListResponse,
+    PersonCreateRequest,
+    PersonCreateResponse,
     PersonLinkRequest,
     PersonLinkResponse,
     PersonUnlinkResponse,
@@ -89,6 +91,15 @@ export const peopleApi = {
         const response = await apiClient.get<PeopleListResponse>('/api/people');
         if (!response.ok) {
             throw new Error(response.error || 'Failed to fetch people');
+        }
+        return response.data!;
+    },
+
+    // Create new person
+    async createPerson(personData: PersonCreateRequest): Promise<PersonCreateResponse> {
+        const response = await apiClient.post<PersonCreateResponse>('/api/people', personData);
+        if (!response.ok) {
+            throw new Error(response.error || 'Failed to create person');
         }
         return response.data!;
     },

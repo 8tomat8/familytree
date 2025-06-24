@@ -124,6 +124,18 @@ export interface PeopleListResponse {
     count: number;
 }
 
+export interface PersonCreateRequest {
+    name: string;
+    birthDate?: string;
+    deathDate?: string;
+    notes?: string;
+}
+
+export interface PersonCreateResponse {
+    success: boolean;
+    person: Person;
+}
+
 export interface PersonLinkRequest {
     personId: string;
     imageId: string;

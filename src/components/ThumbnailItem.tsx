@@ -13,11 +13,12 @@ interface ThumbnailItemProps {
         currentIndex: number;
         onImageSelect: (index: number) => void;
         imageRefreshKeys?: Record<string, number>;
+        disabled?: boolean;
     };
 }
 
 export function ThumbnailItem({ index, style, data }: ThumbnailItemProps) {
-    const { images, currentIndex, onImageSelect, imageRefreshKeys = {} } = data;
+    const { images, currentIndex, onImageSelect, imageRefreshKeys = {}, disabled = false } = data;
     const image = images[index];
     const [isLoaded, setIsLoaded] = useState(false);
 
@@ -43,12 +44,13 @@ export function ThumbnailItem({ index, style, data }: ThumbnailItemProps) {
                         ? 'border-blue-500 shadow-xl'
                         : 'border-gray-200 dark:border-gray-700 shadow-sm'
                     }
-                    hover:shadow-lg hover:scale-[1.02]
+                    ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-lg hover:scale-[1.02] cursor-pointer'}
                 `}
             >
                 <button
-                    onClick={() => onImageSelect(index)}
-                    className="w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 rounded-lg"
+                    onClick={() => !disabled && onImageSelect(index)}
+                    disabled={disabled}
+                    className={`w-full rounded-lg ${disabled ? 'cursor-not-allowed' : 'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50'}`}
                 >
                     <div className="w-full h-20 bg-gray-100 dark:bg-gray-800 rounded-t-lg flex items-center justify-center relative overflow-hidden">
                         {!inView ? (
