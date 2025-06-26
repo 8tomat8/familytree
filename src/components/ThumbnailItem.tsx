@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import Image from 'next/image';
 import { useInView } from 'react-intersection-observer';
 import { ImageMetadata } from '@shared/types';
@@ -17,7 +17,7 @@ interface ThumbnailItemProps {
     };
 }
 
-export function ThumbnailItem({ index, style, data }: ThumbnailItemProps) {
+export const ThumbnailItem = memo(function ThumbnailItem({ index, style, data }: ThumbnailItemProps) {
     const { images, currentIndex, onImageSelect, imageRefreshKeys = {}, disabled = false } = data;
     const image = images[index];
     const [isLoaded, setIsLoaded] = useState(false);
@@ -106,4 +106,4 @@ export function ThumbnailItem({ index, style, data }: ThumbnailItemProps) {
             </div>
         </div>
     );
-} 
+}); 
