@@ -92,6 +92,15 @@ export async function PATCH(
 
         const parsed = UpdateSchema.safeParse(body);
         if (!parsed.success) {
+            // Check for specific datePrecision validation error
+            const precisionError = parsed.error.issues.find(issue => 
+                issue.path.includes('datePrecision') && issue.code === 'invalid_enum_value'
+            );
+            if (precisionError) {
+                return NextResponse.json({ 
+                    error: 'Invalid date precision. Must be one of: hour, day, month, year, decade' 
+                }, { status: 400 });
+            }
             return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
         }
         const validBody = parsed.data;

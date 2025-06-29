@@ -21,24 +21,25 @@ export async function GET(
                 birthDate: item.person.birthDate?.toISOString(),
                 deathDate: item.person.deathDate?.toISOString(),
                 notes: item.person.notes,
-                boundingBox: (item.boundingBox.x !== null &&
-                    item.boundingBox.y !== null &&
-                    item.boundingBox.width !== null &&
-                    item.boundingBox.height !== null) ? {
+                boundingBox: {
                     x: item.boundingBox.x,
                     y: item.boundingBox.y,
                     width: item.boundingBox.width,
                     height: item.boundingBox.height,
-                } : null
+                }
             })),
             count: result.length
         });
 
     } catch (error: any) {
         console.error('Error fetching people for image:', error);
+        
+        // Handle specific error types
+        const status = error.message?.includes('not found') ? 404 : 500;
+        
         return NextResponse.json(
             { error: error.message || 'Failed to fetch people for image' },
-            { status: 500 }
+            { status }
         );
     }
 } 

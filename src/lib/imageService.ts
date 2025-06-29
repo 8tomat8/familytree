@@ -3,7 +3,7 @@ import path from 'path';
 import { createHash } from 'crypto';
 import sharp from 'sharp';
 import { db, images, Image, NewImage } from '@/lib/db';
-import { eq, desc, count, sum } from 'drizzle-orm';
+import { eq, desc, count, sum, sql } from 'drizzle-orm';
 import { SupportedImageExtension, SUPPORTED_IMAGE_EXTENSIONS } from '@shared/types';
 
 export class ImageService {
@@ -416,13 +416,13 @@ export class ImageService {
         try {
             const allImages = await db.select({
                 totalImages: count(),
-                activeImages: count(images.isActive),
+                activeImages: sum(sql`CASE WHEN ${images.isActive} = true THEN 1 ELSE 0 END`),
                 totalSize: sum(images.size),
             }).from(images);
 
             return {
                 totalImages: allImages[0].totalImages,
-                activeImages: allImages[0].activeImages,
+                activeImages: Number(allImages[0].activeImages) || 0,
                 totalSize: Number(allImages[0].totalSize) || 0,
             };
         } catch (error) {

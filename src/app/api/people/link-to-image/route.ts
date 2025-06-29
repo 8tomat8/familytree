@@ -86,9 +86,13 @@ export async function DELETE(request: NextRequest) {
 
     } catch (error: any) {
         console.error('Error unlinking person from image:', error);
+        
+        // Handle specific error types
+        const status = error.message?.includes('No link found') ? 404 : 500;
+        
         return NextResponse.json(
             { error: error.message || 'Failed to unlink person from image' },
-            { status: 500 }
+            { status }
         );
     }
 } 

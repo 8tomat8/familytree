@@ -14,8 +14,8 @@ export async function GET(request: NextRequest) {
             people: people.map(person => ({
                 id: person.id,
                 name: person.name,
-                birthDate: person.birthDate?.toISOString(),
-                deathDate: person.deathDate?.toISOString(),
+                birthDate: person.birthDate ? person.birthDate.toISOString() : null,
+                deathDate: person.deathDate ? person.deathDate.toISOString() : null,
                 notes: person.notes,
                 createdAt: person.createdAt,
                 updatedAt: person.updatedAt
@@ -94,8 +94,8 @@ export async function POST(request: NextRequest) {
             person: {
                 id: newPerson.id,
                 name: newPerson.name,
-                birthDate: newPerson.birthDate?.toISOString(),
-                deathDate: newPerson.deathDate?.toISOString(),
+                birthDate: newPerson.birthDate ? newPerson.birthDate.toISOString() : null,
+                deathDate: newPerson.deathDate ? newPerson.deathDate.toISOString() : null,
                 notes: newPerson.notes,
                 createdAt: newPerson.createdAt,
                 updatedAt: newPerson.updatedAt

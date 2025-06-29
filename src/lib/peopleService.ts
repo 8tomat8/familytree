@@ -159,12 +159,17 @@ export class PeopleService {
                 .where(and(
                     eq(imagePeople.imageId, imageId),
                     eq(imagePeople.personId, personId)
-                ));
+                ))
+                .returning();
+
+            if (result.length === 0) {
+                throw new Error('No link found between this person and image');
+            }
 
             return;
         } catch (error) {
             console.error('Error unlinking person from image:', error);
-            throw new Error('Failed to unlink person from image');
+            throw error;
         }
     }
 
@@ -173,6 +178,16 @@ export class PeopleService {
      */
     async getPeopleForImage(imageId: string) {
         try {
+            // First validate that the image exists
+            const image = await db.select()
+                .from(images)
+                .where(eq(images.id, imageId))
+                .limit(1);
+
+            if (image.length === 0) {
+                throw new Error('Image not found');
+            }
+
             const result = await db.select({
                 person: people,
                 boundingBox: {
@@ -189,7 +204,7 @@ export class PeopleService {
             return result;
         } catch (error) {
             console.error('Error fetching people for image:', error);
-            throw new Error('Failed to fetch people for image');
+            throw error; // Re-throw to preserve the specific error message
         }
     }
 }
