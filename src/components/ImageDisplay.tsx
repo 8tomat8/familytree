@@ -6,6 +6,7 @@ import 'react-image-crop/dist/ReactCrop.css';
 import { api } from '@/lib/api';
 import { Person, BoundingBox } from '@shared/types';
 import { PersonBoundingBox } from './PersonBoundingBox';
+import { appNotifications } from '@/lib/notifications';
 
 interface ImageDisplayProps {
     src: string;
@@ -15,11 +16,14 @@ interface ImageDisplayProps {
     isCropping?: boolean;
 }
 
+// Minimum crop size in pixels
+const MIN_CROP_SIZE = 50;
+
 export function ImageDisplay({ src, imageId, refreshKey = 0, isCropping = false }: ImageDisplayProps) {
     // Serve images from static endpoint
     const imageSrc = `/images/${encodeURIComponent(src)}`;
 
-    // Crop state - start with no initial crop
+    // Crop state - automatically initialized to 50x50px when cropping starts
     const [crop, setCrop] = useState<Crop>();
     const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
     const [inputValue, setInputValue] = useState<string>('');
@@ -51,7 +55,7 @@ export function ImageDisplay({ src, imageId, refreshKey = 0, isCropping = false 
                 }
             }
         };
-        
+
         fetchImagePeople();
     }, [imageId, successMessage]); // Re-fetch when successMessage changes (after linking)
 
@@ -74,32 +78,46 @@ export function ImageDisplay({ src, imageId, refreshKey = 0, isCropping = false 
         fetchPersons();
     }, [isCropping, allPersons.length]);
 
+    // Set initial crop when cropping mode is activated
+    useEffect(() => {
+        if (isCropping && !crop) {
+            // Set a default crop with minimum size
+            setCrop({
+                unit: 'px',
+                x: 100,
+                y: 100,
+                width: MIN_CROP_SIZE,
+                height: MIN_CROP_SIZE
+            });
+        }
+    }, [isCropping, crop]);
+
     const handlePersonAdded = async (crop: Crop, personName: string) => {
         try {
             setIsCreatingNew(true);
             setError(null);
-            
+
             // Create person
             const createResponse = await api.people.createPerson({
                 name: personName,
             });
-            
+
             // Convert crop coordinates (relative to displayed image) to natural image coordinates
             const displayedWidth = imageRef.current?.clientWidth || 1;
             const displayedHeight = imageRef.current?.clientHeight || 1;
             const naturalWidth = imageRef.current?.naturalWidth || 1;
             const naturalHeight = imageRef.current?.naturalHeight || 1;
-            
+
             const scaleToNaturalX = naturalWidth / displayedWidth;
             const scaleToNaturalY = naturalHeight / displayedHeight;
-            
+
             const naturalBoundingBox = {
                 x: Math.round(crop.x * scaleToNaturalX),
                 y: Math.round(crop.y * scaleToNaturalY),
                 width: Math.round(crop.width * scaleToNaturalX),
                 height: Math.round(crop.height * scaleToNaturalY)
             };
-            
+
             console.log('Converting crop to natural coordinates:', {
                 cropOriginal: crop,
                 displayedSize: { displayedWidth, displayedHeight },
@@ -107,22 +125,22 @@ export function ImageDisplay({ src, imageId, refreshKey = 0, isCropping = false 
                 scale: { scaleToNaturalX, scaleToNaturalY },
                 naturalBoundingBox
             });
-            
+
             // Link to image
             await api.people.linkToImage({
                 personId: createResponse.person.id,
                 imageId,
                 boundingBox: naturalBoundingBox
             });
-            
+
             // Update UI state
             setSelectedPerson(createResponse.person);
             setSuccessMessage(`Created and linked ${personName}`);
-            
+
             // Refresh image people
             const response = await api.people.getPeopleForImage(imageId);
             setImagePeople(response.people);
-            
+
             // Clear states after success
             setTimeout(() => {
                 setCrop(undefined);
@@ -131,7 +149,13 @@ export function ImageDisplay({ src, imageId, refreshKey = 0, isCropping = false 
                 setSuccessMessage(null);
             }, 2000);
         } catch (error) {
-            setError(error instanceof Error ? error.message : 'Failed to create person');
+            const errorMessage = error instanceof Error ? error.message : 'Failed to create person';
+            if (errorMessage.includes('already linked')) {
+                appNotifications.personAlreadyLinked(personName);
+            } else {
+                appNotifications.personLinkError(errorMessage);
+            }
+            setError(errorMessage);
         } finally {
             setIsCreatingNew(false);
         }
@@ -141,35 +165,35 @@ export function ImageDisplay({ src, imageId, refreshKey = 0, isCropping = false 
         try {
             setIsLinking(true);
             setError(null);
-            
+
             // Convert crop coordinates (relative to displayed image) to natural image coordinates
             const displayedWidth = imageRef.current?.clientWidth || 1;
             const displayedHeight = imageRef.current?.clientHeight || 1;
             const naturalWidth = imageRef.current?.naturalWidth || 1;
             const naturalHeight = imageRef.current?.naturalHeight || 1;
-            
+
             const scaleToNaturalX = naturalWidth / displayedWidth;
             const scaleToNaturalY = naturalHeight / displayedHeight;
-            
+
             const naturalBoundingBox = {
                 x: Math.round(crop.x * scaleToNaturalX),
                 y: Math.round(crop.y * scaleToNaturalY),
                 width: Math.round(crop.width * scaleToNaturalX),
                 height: Math.round(crop.height * scaleToNaturalY)
             };
-            
+
             await api.people.linkToImage({
                 personId: person.id,
                 imageId,
                 boundingBox: naturalBoundingBox
             });
-            
+
             setSuccessMessage(`Linked ${person.name} to image`);
-            
+
             // Refresh image people
             const response = await api.people.getPeopleForImage(imageId);
             setImagePeople(response.people);
-            
+
             // Clear states after success
             setTimeout(() => {
                 setCrop(undefined);
@@ -178,7 +202,13 @@ export function ImageDisplay({ src, imageId, refreshKey = 0, isCropping = false 
                 setSuccessMessage(null);
             }, 2000);
         } catch (error) {
-            setError(error instanceof Error ? error.message : 'Failed to link person');
+            const errorMessage = error instanceof Error ? error.message : 'Failed to link person';
+            if (errorMessage.includes('already linked')) {
+                appNotifications.personAlreadyLinked(person.name);
+            } else {
+                appNotifications.personLinkError(errorMessage);
+            }
+            setError(errorMessage);
         } finally {
             setIsLinking(false);
         }
@@ -190,11 +220,11 @@ export function ImageDisplay({ src, imageId, refreshKey = 0, isCropping = false 
             const containerRect = cropContainerRef.current.getBoundingClientRect();
             const imageRect = imageRef.current.getBoundingClientRect();
             const inputWidth = inputRef.current.offsetWidth;
-            
+
             // Calculate offset of image within container
             const imageOffsetX = imageRect.left - containerRect.left;
             const imageOffsetY = imageRect.top - containerRect.top;
-            
+
             // Calculate centered position relative to container
             const centerX = imageOffsetX + crop.x + (crop.width / 2) - (inputWidth / 2);
             const topY = imageOffsetY + crop.y + crop.height + 10;
@@ -208,7 +238,7 @@ export function ImageDisplay({ src, imageId, refreshKey = 0, isCropping = false 
 
     const handleSavePerson = async () => {
         if (!crop) return;
-        
+
         if (selectedPerson) {
             // Link existing person
             await handlePersonLink(crop, selectedPerson);
@@ -216,13 +246,14 @@ export function ImageDisplay({ src, imageId, refreshKey = 0, isCropping = false 
             // Create new person
             await handlePersonAdded(crop, inputValue.trim());
         }
-        
+
         setShowDropdown(false);
     };
 
     const handlePersonSelect = (person: Person) => {
+        console.log('Person selected:', person.name); // Debug log
         setSelectedPerson(person);
-        setInputValue(person.name);
+        setInputValue(person.name || ''); // Ensure fallback for empty names
         setShowDropdown(false);
     };
 
@@ -230,7 +261,7 @@ export function ImageDisplay({ src, imageId, refreshKey = 0, isCropping = false 
         const value = e.target.value;
         setInputValue(value);
         setSelectedPerson(null); // Clear selection when typing
-        
+
         if (value.trim()) {
             // TODO: Use some lib for searching per word, with ranking
             const filtered = allPersons.filter(p =>
@@ -254,18 +285,18 @@ export function ImageDisplay({ src, imageId, refreshKey = 0, isCropping = false 
         // Delay hiding dropdown to allow clicking on suggestions
         setTimeout(() => setShowDropdown(false), 150);
     };
-    
+
     // Handle removing person from image
     const handleRemovePerson = async (personId: string) => {
         try {
             setError(null);
             await api.people.unlinkFromImage(personId, imageId);
             setSuccessMessage('Person removed from image');
-            
+
             // Refresh image people
             const response = await api.people.getPeopleForImage(imageId);
             setImagePeople(response.people);
-            
+
             setTimeout(() => {
                 setSuccessMessage(null);
             }, 2000);
@@ -303,7 +334,32 @@ export function ImageDisplay({ src, imageId, refreshKey = 0, isCropping = false 
                 {isCropping ? (
                     <ReactCrop
                         crop={crop}
-                        onChange={(newCrop) => setCrop(newCrop)}
+                        onChange={(newCrop) => {
+                            // Enforce minimum crop size
+                            if (imageRef.current) {
+                                // Convert pixel minimums to percentages
+                                const minWidthPercent = (MIN_CROP_SIZE / imageRef.current.clientWidth) * 100;
+                                const minHeightPercent = (MIN_CROP_SIZE / imageRef.current.clientHeight) * 100;
+                                
+                                // Ensure the crop meets minimum size requirements
+                                if (newCrop.unit === 'px') {
+                                    if (newCrop.width < MIN_CROP_SIZE) {
+                                        newCrop.width = MIN_CROP_SIZE;
+                                    }
+                                    if (newCrop.height < MIN_CROP_SIZE) {
+                                        newCrop.height = MIN_CROP_SIZE;
+                                    }
+                                } else if (newCrop.unit === '%') {
+                                    if (newCrop.width < minWidthPercent) {
+                                        newCrop.width = minWidthPercent;
+                                    }
+                                    if (newCrop.height < minHeightPercent) {
+                                        newCrop.height = minHeightPercent;
+                                    }
+                                }
+                            }
+                            setCrop(newCrop);
+                        }}
                         style={{
                             maxWidth: '100vw',
                             maxHeight: '100vh',
@@ -318,13 +374,13 @@ export function ImageDisplay({ src, imageId, refreshKey = 0, isCropping = false 
                     <div className="relative inline-block">
                         {imageElement}
                         {/* Display existing person bounding boxes */}
-                        {!isCropping && imageNaturalSize && imagePeople.map((person) => (
+                        {!isCropping && imageNaturalSize && imageRef.current && imagePeople.map((person) => (
                             <PersonBoundingBox
                                 key={person.id}
                                 person={person}
                                 imageWidth={imageNaturalSize.width}
                                 imageHeight={imageNaturalSize.height}
-                                imageRef={imageRef}
+                                imageRef={imageRef as React.RefObject<HTMLImageElement>}
                                 onDelete={handleRemovePerson}
                             />
                         ))}
@@ -402,18 +458,6 @@ export function ImageDisplay({ src, imageId, refreshKey = 0, isCropping = false 
                     {isLoadingPersons && (
                         <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                             Loading persons...
-                        </div>
-                    )}
-                    
-                    {error && (
-                        <div className="text-xs text-red-500 dark:text-red-400 mt-1">
-                            {error}
-                        </div>
-                    )}
-                    
-                    {successMessage && (
-                        <div className="text-xs text-green-500 dark:text-green-400 mt-1">
-                            {successMessage}
                         </div>
                     )}
                 </div>

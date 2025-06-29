@@ -108,6 +108,9 @@ export const peopleApi = {
     async linkToImage(request: PersonLinkRequest): Promise<PersonLinkResponse> {
         const response = await apiClient.post<PersonLinkResponse>('/api/people/link-to-image', request);
         if (!response.ok) {
+            if (response.status === 409) {
+                throw new Error('This person is already linked to this image');
+            }
             throw new Error(response.error || 'Failed to link person to image');
         }
         return response.data!;

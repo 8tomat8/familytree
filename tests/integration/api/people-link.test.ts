@@ -1,6 +1,8 @@
 import { describe, expect } from 'vitest'
 import { testWithDb } from '../helpers/test-context'
 import { testApiRoute, createTestImageData, createTestPersonData, mockUUID } from '../helpers/api-test'
+import { imagePeople } from '../../../src/lib/db/schema'
+import { and, eq } from 'drizzle-orm'
 
 describe('People Link API', () => {
   describe('POST /api/people/link-to-image', () => {
@@ -15,7 +17,7 @@ describe('People Link API', () => {
           imageId: image.id
         }
       })
-      
+
       expect(response.status).toBe(200)
       expect(response.body.success).toBe(true)
       expect(response.body.message).toContain('successfully linked')
@@ -42,7 +44,7 @@ describe('People Link API', () => {
           boundingBox
         }
       })
-      
+
       expect(response.status).toBe(200)
       expect(response.body.success).toBe(true)
     })
@@ -57,7 +59,7 @@ describe('People Link API', () => {
           imageId: image.id
         }
       })
-      
+
       expect(response.status).toBe(404)
       expect(response.body.error).toContain('Person not found')
     })
@@ -72,7 +74,7 @@ describe('People Link API', () => {
           imageId: fakeImageId
         }
       })
-      
+
       expect(response.status).toBe(404)
       expect(response.body.error).toContain('Image not found')
     })
@@ -98,7 +100,7 @@ describe('People Link API', () => {
           imageId: image.id
         }
       })
-      
+
       expect(response.status).toBe(409)
       expect(response.body.error).toContain('already linked')
     })
@@ -124,7 +126,7 @@ describe('People Link API', () => {
           boundingBox: invalidBoundingBox
         }
       })
-      
+
       expect(response.status).toBe(400)
       expect(response.body.error).toContain('exceeds image dimensions')
     })
@@ -136,7 +138,7 @@ describe('People Link API', () => {
           // Missing imageId
         }
       })
-      
+
       expect(response.status).toBe(400)
       expect(response.body.error).toContain('required')
     })
@@ -147,7 +149,7 @@ describe('People Link API', () => {
       // Create and link
       const [image] = await seedData.createImage(createTestImageData())
       const [person] = await seedData.createPerson(createTestPersonData())
-      
+
       await seedData.linkPersonToImage({
         imageId: image.id,
         personId: person.id,
@@ -164,10 +166,20 @@ describe('People Link API', () => {
           imageId: image.id
         }
       })
-      
+
       expect(response.status).toBe(200)
       expect(response.body.success).toBe(true)
       expect(response.body.message).toContain('successfully unlinked')
+
+      // Verify the link was actually deleted from the database
+      const remainingLinks = await db.select()
+        .from(imagePeople)
+        .where(and(
+          eq(imagePeople.imageId, image.id),
+          eq(imagePeople.personId, person.id)
+        ))
+      
+      expect(remainingLinks).toHaveLength(0)
     })
 
     testWithDb('returns 404 when link does not exist', async ({ db, seedData }) => {
@@ -180,7 +192,7 @@ describe('People Link API', () => {
           imageId: image.id
         }
       })
-      
+
       expect(response.status).toBe(404)
       expect(response.body.error).toContain('No link found')
     })
@@ -192,7 +204,7 @@ describe('People Link API', () => {
           // Missing imageId
         }
       })
-      
+
       expect(response.status).toBe(400)
       expect(response.body.error).toContain('required')
     })
@@ -203,7 +215,7 @@ describe('People Link API', () => {
       const [image] = await seedData.createImage(createTestImageData())
 
       const response = await testApiRoute('GET', `/api/images/${image.id}/people`)
-      
+
       expect(response.status).toBe(200)
       expect(response.body.people).toEqual([])
       expect(response.body.count).toBe(0)
@@ -217,7 +229,7 @@ describe('People Link API', () => {
       const [person2] = await seedData.createPerson(createTestPersonData({
         name: 'Person Two'
       }))
-      
+
       // Link both people to the image
       await seedData.linkPersonToImage({
         imageId: image.id,
@@ -238,11 +250,11 @@ describe('People Link API', () => {
       })
 
       const response = await testApiRoute('GET', `/api/images/${image.id}/people`)
-      
+
       expect(response.status).toBe(200)
       expect(response.body.count).toBe(2)
       expect(response.body.people).toHaveLength(2)
-      
+
       // Find person with bounding box
       const personWithBounds = response.body.people.find((p: any) => p.boundingBox.x !== null)
       expect(personWithBounds).toBeDefined()
@@ -268,7 +280,7 @@ describe('People Link API', () => {
       const fakeImageId = mockUUID()
 
       const response = await testApiRoute('GET', `/api/images/${fakeImageId}/people`)
-      
+
       expect(response.status).toBe(404)
       expect(response.body.error).toContain('not found')
     })

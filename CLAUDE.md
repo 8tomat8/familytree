@@ -115,7 +115,50 @@ When implementing new features, consider the family tree end goal:
 7. **Photo Integration:** Seamlessly connect photos to family members and events
 
 ### Testing
-The codebase does not currently have a defined test framework - check README or ask the user for test commands before implementing tests.
+
+**E2E Tests (Playwright):**
+```bash
+npm run test:e2e              # Run all E2E tests
+npm run test:e2e:ui           # Run with Playwright UI mode
+npm run test:e2e:headed       # Run tests in headed browser mode
+npx playwright test <file>    # Run specific test file
+npx playwright test --grep "test name"  # Run tests matching pattern
+```
+
+**Integration Tests (Vitest):**
+```bash
+npm run test:integration         # Run all integration tests
+npm run test:integration:watch   # Run in watch mode
+npm run test:integration:ui      # Run with Vitest UI
+npx vitest run <file>           # Run specific test file
+```
+
+Test files are located in:
+- `tests/e2e/` - End-to-end tests using Playwright
+- `tests/integration/` - Integration tests using Vitest
+
+## Key Architectural Decisions
+
+### Service Layer Pattern
+The application uses a service layer pattern where business logic is separated from API routes:
+- Services in `src/lib/services/` handle all business logic
+- API routes in `src/app/api/` are thin controllers that delegate to services
+- Database queries are encapsulated within services using Drizzle ORM
+
+### Image Processing Architecture
+- Images are stored in `public/images/` and served statically
+- The `imageService` maintains a checksum-based sync between filesystem and database
+- Image rotation uses Sharp library with automatic cache-busting via version increments
+- Bounding boxes for people are stored in natural image coordinates (not display coordinates)
+
+### Type Safety
+- Shared types between frontend and backend are defined in `shared/types/`
+- API contracts are strictly typed using TypeScript interfaces
+- Zod is available for runtime validation but not yet widely used
+
+### Known Issues (from RFCs)
+1. **Person Selection Bug:** The ImageDisplay component has critical bugs preventing proper person creation/linking (see RFC-001)
+2. **Missing Authentication:** Auth system is designed (RFC-002) but not implemented
 
 ## Important Project Rules
 - **Git Commits:** NEVER commit changes unless the user explicitly asks you to. The user prefers to handle git commits themselves.

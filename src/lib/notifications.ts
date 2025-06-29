@@ -92,4 +92,20 @@ export const appNotifications = {
     // Validation errors
     validationError: (field: string) =>
         notifications.error(`Please check the ${field} field`),
+
+    // People operations
+    personLinked: (personName: string) =>
+        notifications.success(`${personName} linked to image`),
+
+    personCreatedAndLinked: (personName: string) =>
+        notifications.success(`Created and linked ${personName}`),
+
+    personUnlinked: (personName: string) =>
+        notifications.success(`${personName} removed from image`),
+
+    personAlreadyLinked: (personName: string) =>
+        notifications.warning(`${personName} is already linked to this image`),
+
+    personLinkError: (error: string) =>
+        notifications.error(`Failed to link person: ${error}`),
 }; 

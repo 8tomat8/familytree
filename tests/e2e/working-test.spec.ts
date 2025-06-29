@@ -326,7 +326,7 @@ test.describe('Person Creation & Linking - Working Tests', () => {
       await page.mouse.up();
       
       // Fill in person name
-      const personInput = page.getByRole('textbox', { name: 'Enter person\'s name' });
+      const personInput = page.getByRole('textbox', { name: 'Enter person\'s name' }).first();
       await expect(personInput).toBeVisible({ timeout: 5000 });
       await personInput.fill('Person To Delete');
       
@@ -390,8 +390,7 @@ test.describe('Person Creation & Linking - Working Tests', () => {
       
       // Set up listener for the delete API call
       const deleteResponse = page.waitForResponse(
-        response => response.url().includes('/api/people') && 
-                   response.url().includes('/unlink') && 
+        response => response.url().includes('/api/people/link-to-image') && 
                    response.request().method() === 'DELETE'
       );
       

@@ -153,12 +153,7 @@ export interface PersonUnlinkResponse {
 }
 
 export interface ImagePeopleResponse {
-    people: Array<{
-        id: string;
-        name: string;
-        birthDate?: string;
-        deathDate?: string;
-        notes?: string;
+    people: Array<Person & {
         boundingBox?: BoundingBox;
     }>;
     count: number;
